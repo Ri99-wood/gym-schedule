@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>トレーニング予約調整</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #dbeafe;
+      --confirmed: #16a34a;
+      --confirmed-light: #dcfce7;
+      --alternative: #d97706;
+      --alternative-light: #fef3c7;
+      --pending: #6366f1;
+      --pending-light: #e0e7ff;
+      --danger: #dc2626;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Setup screen */
+    .setup-screen {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .setup-screen.show { display: flex; }
+    .setup-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 36px;
+      max-width: 480px;
+      width: 100%;
+    }
+    .setup-card h2 { font-size: 20px; margin-bottom: 12px; }
+    .setup-card p { font-size: 14px; color: var(--gray-500); line-height: 1.7; }
+    .setup-card a { color: var(--primary); }
+    .setup-card pre {
+      background: var(--gray-100);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 12px;
+      margin: 12px 0;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+    .setup-card .step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      align-items: flex-start;
+    }
+    .step-num {
+      background: var(--primary);
+      color: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .setup-card h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--gray-900);
+    }
+    .setup-card .subtitle {
+      font-size: 13px;
+      color: var(--gray-400);
+      margin-bottom: 24px;
+    }
+
+    /* Login */
+    .login-screen {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .login-screen.show { display: flex; }
+    .login-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 40px 32px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+    .login-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .login-card .subtitle { color: var(--gray-400); font-size: 13px; margin-bottom: 28px; }
+    .role-buttons { display: flex; gap: 12px; margin-bottom: 20px; }
+    .role-btn {
+      flex: 1;
+      padding: 16px 12px;
+      border: 2px solid var(--gray-200);
+      border-radius: var(--radius);
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-600);
+    }
+    .role-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .role-btn.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .role-btn .role-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+    .pin-group { margin-bottom: 20px; display: none; }
+    .pin-group.show { display: block; }
+    .pin-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 20px;
+      text-align: center;
+      letter-spacing: 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .pin-input:focus { border-color: var(--primary); }
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      display: none;
+    }
+    .login-btn.show { display: block; }
+    .login-btn:hover { opacity: 0.9; }
+    .login-error { color: var(--danger); font-size: 13px; margin-top: 12px; display: none; }
+
+    /* App */
+    .app { display: none; }
+    .app.show { display: block; }
+    .header {
+      background: #fff;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 12px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .header h2 { font-size: 16px; font-weight: 700; }
+    .role-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .role-badge.client { background: var(--primary-light); color: var(--primary); }
+    .role-badge.trainer { background: var(--confirmed-light); color: var(--confirmed); }
+    .sync-indicator {
+      font-size: 11px;
+      color: var(--gray-400);
+      display: none;
+      align-items: center;
+      gap: 5px;
+    }
+    .sync-indicator.show { display: flex; }
+    .sync-dot {
+      width: 6px; height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .logout-btn {
+      font-size: 13px;
+      color: var(--gray-400);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .logout-btn:hover { background: var(--gray-100); color: var(--gray-600); }
+
+    /* Calendar */
+    .main { max-width: 800px; margin: 0 auto; padding: 20px; }
+    .month-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 16px;
+    }
+    .month-nav button {
+      width: 40px; height: 40px;
+      border: 1px solid var(--gray-200);
+      border-radius: 50%;
+      background: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      color: var(--gray-600);
+    }
+    .month-nav button:hover { background: var(--gray-100); }
+    .month-label { font-size: 20px; font-weight: 700; min-width: 180px; text-align: center; }
+    .calendar { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .calendar-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .calendar-header div {
+      padding: 10px 0;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-500);
+    }
+    .calendar-header div:first-child { color: var(--danger); }
+    .calendar-header div:last-child { color: var(--primary); }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .calendar-cell {
+      min-height: 72px;
+      border-right: 1px solid var(--gray-100);
+      border-bottom: 1px solid var(--gray-100);
+      padding: 6px;
+      cursor: pointer;
+      transition: background 0.12s;
+      position: relative;
+    }
+    .calendar-cell:nth-child(7n) { border-right: none; }
+    .calendar-cell:hover:not(.empty) { background: var(--gray-50); }
+    .calendar-cell.empty { cursor: default; }
+    .calendar-cell.today { background: var(--primary-light); }
+    .calendar-cell.past { opacity: 0.45; cursor: default; }
+    .day-number { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .calendar-cell:nth-child(7n+1) .day-number { color: var(--danger); }
+    .calendar-cell:nth-child(7n) .day-number { color: var(--primary); }
+    .dot-container { display: flex; gap: 3px; flex-wrap: wrap; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .status-dot.pending { background: var(--pending); }
+    .status-dot.confirmed { background: var(--confirmed); }
+    .status-dot.alternative { background: var(--alternative); }
+
+    /* Legend */
+    .legend { display: flex; gap: 16px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray-500); }
+    .client-hint {
+      text-align: center;
+      font-size: 13px;
+      color: var(--gray-400);
+      margin-top: 10px;
+    }
+
+    /* Request list */
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 24px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .count-badge {
+      background: var(--gray-200);
+      color: var(--gray-600);
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .request-list { display: flex; flex-direction: column; gap: 10px; }
+    .request-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      border-left: 4px solid var(--gray-300);
+      transition: box-shadow 0.2s, opacity 0.2s;
+    }
+    .request-card:hover { box-shadow: var(--shadow-lg); }
+    .request-card.pending { border-left-color: var(--pending); }
+    .request-card.confirmed { border-left-color: var(--confirmed); }
+    .request-card.alternative { border-left-color: var(--alternative); }
+    .request-card.optimistic { opacity: 0.6; }
+    .request-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .request-date { font-weight: 700; font-size: 15px; }
+    .request-time { font-size: 14px; color: var(--gray-600); margin-top: 2px; }
+    .status-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .status-badge.pending { background: var(--pending-light); color: var(--pending); }
+    .status-badge.confirmed { background: var(--confirmed-light); color: var(--confirmed); }
+    .status-badge.alternative { background: var(--alternative-light); color: var(--alternative); }
+    .alt-info {
+      background: var(--alternative-light);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    .alt-info .alt-label { font-weight: 600; color: var(--alternative); margin-bottom: 4px; font-size: 12px; }
+    .alt-info .alt-detail { color: var(--gray-700); font-weight: 600; }
+    .alt-info .alt-note { color: var(--gray-500); margin-top: 4px; font-size: 12px; }
+    .request-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { opacity: 0.82; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-confirm { background: var(--confirmed); color: #fff; }
+    .btn-alt { background: var(--alternative); color: #fff; }
+    .btn-accept { background: var(--confirmed); color: #fff; }
+    .btn-reject { background: var(--gray-200); color: var(--gray-600); }
+    .btn-delete { background: var(--gray-100); color: var(--danger); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-cancel { background: var(--gray-100); color: var(--gray-600); }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--gray-400); font-size: 14px; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+    }
+    @media (min-width: 600px) {
+      .modal-overlay { align-items: center; padding: 20px; }
+      .modal { border-radius: var(--radius) !important; }
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: var(--radius) var(--radius) 0 0;
+      box-shadow: var(--shadow-lg);
+      max-width: 420px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      padding: 20px 20px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h3 { font-size: 18px; font-weight: 700; }
+    .modal-close {
+      width: 32px; height: 32px;
+      border: none;
+      background: var(--gray-100);
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gray-500);
+    }
+    .modal-close:hover { background: var(--gray-200); }
+    .modal-body { padding: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 6px;
+    }
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+    .time-row { display: flex; gap: 10px; align-items: center; }
+    .time-row span { color: var(--gray-400); font-weight: 600; flex-shrink: 0; }
+    .modal-footer { padding: 0 20px 20px; display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--gray-800);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 400;
+      transition: transform 0.3s ease;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 599px) {
+      .main { padding: 12px; }
+      .calendar-cell { min-height: 56px; padding: 4px; }
+      .day-number { font-size: 12px; }
+      .status-dot { width: 6px; height: 6px; }
+      .month-label { font-size: 17px; min-width: 150px; }
+      .login-card { padding: 32px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Setup screen (shown when Firebase not configured) -->
+<div class="setup-screen" id="setupScreen">
+  <div class="setup-card">
+    <h1>初期設定が必要です</h1>
+    <p class="subtitle">Firebase の設定を index.html に記入してください</p>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div>
+        <a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a> でプロジェクトを作成<br>
+        <small style="color:var(--gray-400)">Firestore Database を作成 → テストモードで開始</small>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div>プロジェクト設定 → マイアプリ → ウェブアプリを追加 → 設定をコピー</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div>
+        <code>index.html</code> の FIREBASE_CONFIG を書き換える：
+        <pre>const FIREBASE_CONFIG = {
+  apiKey: "実際のキー",
+  authDomain: "xxx.firebaseapp.com",
+  projectId: "xxx",
+  storageBucket: "xxx.appspot.com",
+  messagingSenderId: "111",
+  appId: "1:111:web:xxx"
+};</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div>GitHub にプッシュ → Settings → Pages → ブランチを選んで保存</div>
+    </div>
+  </div>
+</div>
+
+<!-- Login -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h1>トレーニング予約調整</h1>
+    <p class="subtitle">ログインするロールを選択してください</p>
+    <div class="role-buttons">
+      <button class="role-btn" data-role="client" id="roleClient">
+        <span class="role-icon">🏋️</span>
+        クライアント
+      </button>
+      <button class="role-btn" data-role="trainer" id="roleTrainer">
+        <span class="role-icon">📋</span>
+        トレーナー
+      </button>
+    </div>
+    <div class="pin-group" id="pinGroup">
+      <input type="password" class="pin-input" id="pinInput" maxlength="8"
+        placeholder="●●●●" inputmode="numeric">
+    </div>
+    <button class="login-btn" id="loginBtn">ログイン</button>
+    <div class="login-error" id="loginError">PINが正しくありません</div>
+  </div>
+</div>
+
+<!-- App -->
+<div class="app" id="app">
+  <div class="header">
+    <div class="header-inner">
+      <div class="header-left">
+        <h2>予約調整</h2>
+        <span class="role-badge" id="roleBadge"></span>
+        <div class="sync-indicator" id="syncIndicator">
+          <div class="sync-dot"></div>同期中
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="logout-btn" id="logoutBtn">ログアウト</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="month-nav">
+      <button id="prevMonth">‹</button>
+      <div class="month-label" id="monthLabel"></div>
+      <button id="nextMonth">›</button>
+    </div>
+
+    <div class="calendar">
+      <div class="calendar-header">
+        <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="status-dot pending"></div> 希望（未確定）</div>
+      <div class="legend-item"><div class="status-dot confirmed"></div> 確定</div>
+      <div class="legend-item"><div class="status-dot alternative"></div> 代替提案あり</div>
+    </div>
+    <div class="client-hint" id="clientHint"></div>
+
+    <div>
+      <div class="section-title">
+        予約一覧 <span class="count-badge" id="requestCount">0</span>
+      </div>
+      <div class="request-list" id="requestList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Request Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>希望日時を追加</h3>
+      <button class="modal-close" id="addModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>日付</label>
+        <input type="date" id="addDate">
+      </div>
+      <div class="form-group">
+        <label>時間帯</label>
+        <div class="time-row">
+          <input type="time" id="addTimeStart" value="10:00">
+          <span>〜</span>
+          <input type="time" id="addTimeEnd" value="11:00">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" id="addModalCancel">キャンセル</button>
+      <button class="btn btn-primary" id="addModalSubmit">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Alternative Modal -->
+<div class="modal-overlay" id="altModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>代替日時を提案</h3>
+      <button class="modal-close" id="altModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>元の希望</label>
+        <div id="altOriginal" style="font-size:14px;color:var(--gray-500);padding:8px 0;"></div>
+      </div>
+      <div class="form-group">
+        <label>代替日付</label>
+        <input type="date" id="altDate">
+      </div>
+      <div class="form-group">
+        <label>代替時間帯</label>
+        <div class="time-row">
+          <input type="time" id="altTimeStart" value="10:00">
+          <span>〜</span>
+          <input type="time" id="altTimeEnd" value="11:00">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>メモ（任意）</label>
+        <textarea id="altNote" placeholder="例：この時間は別の方が入っています"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" id="altModalCancel">キャンセル</button>
+      <button class="btn btn-alt" id="altModalSubmit">提案する</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getFirestore, collection, query, where,
+  onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ══════════════════════════════════════════════
+//  Firebase 設定（ここを書き換えてください）
+// ══════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA6vNQwvJQrkrEklfpE2yn4oUWL9OOyI2c",
+  authDomain: "gym-schedule-d807d.firebaseapp.com",
+  projectId: "gym-schedule-d807d",
+  storageBucket: "gym-schedule-d807d.firebasestorage.app",
+  messagingSenderId: "781181621200",
+  appId: "1:781181621200:web:41b1c7e605d6971b3e9fd5"
+};
+
+// PIN設定（変更可能）
+const PINS = { client: '1234', trainer: '5678' };
+
+// ──────────────────────────────────────────────
+
+const IS_CONFIGURED = FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY';
+
+if (!IS_CONFIGURED) {
+  document.getElementById('setupScreen').classList.add('show');
+} else {
+  document.getElementById('loginScreen').classList.add('show');
+  initApp();
+}
+
+function initApp() {
+  const firebaseApp = initializeApp(FIREBASE_CONFIG);
+  const db = getFirestore(firebaseApp);
+
+  let currentRole = null;
+  let currentYear, currentMonth;
+  let requests = [];
+  let unsubscribe = null;
+  let pendingAltId = null;
+
+  const today = new Date();
+  currentYear = today.getFullYear();
+  currentMonth = today.getMonth();
+
+  // ── Helpers ──
+  const $ = id => document.getElementById(id);
+  const todayStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  };
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function padMonth(y, m) { return `${y}-${pad(m + 1)}`; }
+  function formatDate(s) {
+    if (!s) return '';
+    const d = new Date(s + 'T00:00:00');
+    return `${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）`;
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function showSync() { $('syncIndicator').classList.add('show'); }
+  function hideSync() { $('syncIndicator').classList.remove('show'); }
+  function openModal(id) { $(id).classList.add('show'); }
+  function closeModal(id) { $(id).classList.remove('show'); }
+
+  // ── Login ──
+  let selectedRole = null;
+
+  $('roleClient').addEventListener('click', () => selectRole('client'));
+  $('roleTrainer').addEventListener('click', () => selectRole('trainer'));
+  $('loginBtn').addEventListener('click', doLogin);
+  $('pinInput').addEventListener('keyup', e => { if (e.key === 'Enter') doLogin(); });
+
+  function selectRole(role) {
+    selectedRole = role;
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    $(`role${role === 'client' ? 'Client' : 'Trainer'}`).classList.add('active');
+    $('pinGroup').classList.add('show');
+    $('loginBtn').classList.add('show');
+    $('loginError').style.display = 'none';
+    $('pinInput').focus();
+  }
+
+  function doLogin() {
+    if (!selectedRole) return;
+    const pin = $('pinInput').value;
+    if (!pin) { $('pinInput').focus(); return; }
+    if (String(PINS[selectedRole]) === String(pin)) {
+      currentRole = selectedRole;
+      $('loginScreen').classList.remove('show');
+      $('app').classList.add('show');
+      const badge = $('roleBadge');
+      badge.textContent = currentRole === 'client' ? 'クライアント' : 'トレーナー';
+      badge.className = 'role-badge ' + currentRole;
+      $('clientHint').textContent = currentRole === 'client' ? '日付をタップして希望を追加できます' : '';
+      subscribeToMonth();
+    } else {
+      $('loginError').style.display = 'block';
+    }
+  }
+
+  $('logoutBtn').addEventListener('click', () => {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    currentRole = null;
+    $('pinInput').value = '';
+    $('app').classList.remove('show');
+    $('loginScreen').classList.add('show');
+    $('pinGroup').classList.remove('show');
+    $('loginBtn').classList.remove('show');
+    $('loginError').style.display = 'none';
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    selectedRole = null;
+  });
+
+  // ── Month navigation ──
+  $('prevMonth').addEventListener('click', () => changeMonth(-1));
+  $('nextMonth').addEventListener('click', () => changeMonth(1));
+
+  function changeMonth(delta) {
+    currentMonth += delta;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    subscribeToMonth();
+  }
+
+  // ── Firestore real-time listener ──
+  function subscribeToMonth() {
+    if (unsubscribe) unsubscribe();
+    const ym = padMonth(currentYear, currentMonth);
+    $('monthLabel').textContent = `${currentYear}年 ${currentMonth + 1}月`;
+    showSync();
+
+    const q = query(collection(db, 'requests'), where('yearMonth', '==', ym));
+    unsubscribe = onSnapshot(q, snapshot => {
+      requests = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      requests.sort((a, b) => a.date.localeCompare(b.date) || a.timeStart.localeCompare(b.timeStart));
+      renderCalendar();
+      renderRequests();
+      hideSync();
+    }, () => {
+      showToast('データの取得に失敗しました');
+      hideSync();
+    });
+  }
+
+  // ── Calendar ──
+  function renderCalendar() {
+    const grid = $('calendarGrid');
+    grid.innerHTML = '';
+    const ts = todayStr();
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    for (let i = 0; i < firstDay; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-cell empty';
+      grid.appendChild(cell);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${currentYear}-${pad(currentMonth+1)}-${pad(d)}`;
+      const cell = document.createElement('div');
+      const isPast = dateStr < ts;
+      cell.className = 'calendar-cell' + (dateStr === ts ? ' today' : '') + (isPast ? ' past' : '');
+
+      const num = document.createElement('div');
+      num.className = 'day-number';
+      num.textContent = d;
+      cell.appendChild(num);
+
+      const dayReqs = requests.filter(r => r.date === dateStr);
+      if (dayReqs.length) {
+        const dots = document.createElement('div');
+        dots.className = 'dot-container';
+        dayReqs.forEach(r => {
+          const dot = document.createElement('div');
+          dot.className = 'status-dot ' + r.status;
+          dots.appendChild(dot);
+        });
+        cell.appendChild(dots);
+      }
+
+      if (!isPast) {
+        cell.addEventListener('click', () => onDateClick(dateStr, dayReqs));
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  function onDateClick(dateStr, dayReqs) {
+    if (currentRole === 'client') {
+      $('addDate').value = dateStr;
+      $('addTimeStart').value = '10:00';
+      $('addTimeEnd').value = '11:00';
+      openModal('addModal');
+    } else if (dayReqs.length) {
+      const el = document.querySelector(`.request-card[data-id="${dayReqs[0].id}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  // ── Request list ──
+  function renderRequests() {
+    const list = $('requestList');
+    list.innerHTML = '';
+    $('requestCount').textContent = requests.length;
+
+    if (!requests.length) {
+      list.innerHTML = '<div class="empty-state">この月の予約はありません</div>';
+      return;
+    }
+
+    requests.forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'request-card ' + r.status;
+      card.dataset.id = r.id;
+
+      const labels = { pending: '未確定', confirmed: '確定', alternative: '代替提案' };
+      let html = `
+        <div class="request-top">
+          <div>
+            <div class="request-date">${formatDate(r.date)}</div>
+            <div class="request-time">${r.timeStart} 〜 ${r.timeEnd}</div>
+          </div>
+          <span class="status-badge ${r.status}">${labels[r.status] || r.status}</span>
+        </div>`;
+
+      if (r.status === 'alternative') {
+        html += `<div class="alt-info">
+          <div class="alt-label">▶ トレーナーからの代替提案</div>
+          <div class="alt-detail">${formatDate(r.altDate)} ${r.altTimeStart} 〜 ${r.altTimeEnd}</div>
+          ${r.trainerNote ? `<div class="alt-note">💬 ${r.trainerNote}</div>` : ''}
+        </div>`;
+      }
+
+      html += '<div class="request-actions">';
+      if (currentRole === 'client') {
+        if (r.status === 'alternative') {
+          html += `<button class="btn btn-accept" data-action="accept" data-id="${r.id}">✓ 承諾する</button>
+                   <button class="btn btn-reject" data-action="reject" data-id="${r.id}">辞退</button>`;
+        } else if (r.status === 'pending') {
+          html += `<button class="btn btn-delete" data-action="delete" data-id="${r.id}">取り消し</button>`;
+        } else if (r.status === 'confirmed') {
+          html += `<span style="font-size:13px;color:var(--confirmed);">✓ 確定しました</span>`;
+        }
+      } else {
+        if (r.status === 'pending') {
+          html += `<button class="btn btn-confirm" data-action="confirm" data-id="${r.id}">確定する</button>
+                   <button class="btn btn-alt" data-action="openAlt" data-id="${r.id}">代替を提案</button>`;
+        } else if (r.status === 'confirmed') {
+          html += `<span style="font-size:13px;color:var(--confirmed);">✓ 確定済み</span>`;
+        } else if (r.status === 'alternative') {
+          html += `<span style="font-size:13px;color:var(--alternative);">クライアントの返答待ち</span>`;
+        }
+      }
+      html += '</div>';
+      card.innerHTML = html;
+      list.appendChild(card);
+    });
+
+    list.addEventListener('click', handleListAction);
+  }
+
+  function handleListAction(e) {
+    const btn = e.target.closest('[data-action]');
+    if (!btn || btn.disabled) return;
+    const { action, id } = btn.dataset;
+    btn.disabled = true;
+    showSync();
+
+    const actions = {
+      confirm: () => updateDoc(doc(db, 'requests', id), { status: 'confirmed', updatedAt: serverTimestamp() }),
+      accept: () => {
+        const r = requests.find(x => x.id === id);
+        return updateDoc(doc(db, 'requests', id), {
+          date: r.altDate, timeStart: r.altTimeStart, timeEnd: r.altTimeEnd,
+          status: 'confirmed',
+          altDate: '', altTimeStart: '', altTimeEnd: '', trainerNote: '',
+          updatedAt: serverTimestamp()
+        });
+      },
+      reject: () => updateDoc(doc(db, 'requests', id), {
+        status: 'pending',
+        altDate: '', altTimeStart: '', altTimeEnd: '', trainerNote: '',
+        updatedAt: serverTimestamp()
+      }),
+      delete: async () => {
+        if (!confirm('この希望日時を取り消しますか？')) { btn.disabled = false; hideSync(); return; }
+        return deleteDoc(doc(db, 'requests', id));
+      },
+      openAlt: () => { openAltModal(id); btn.disabled = false; hideSync(); return null; }
+    };
+
+    const fn = actions[action];
+    if (!fn) return;
+    const result = fn();
+    if (!result) return;
+    result.then(() => {
+      const msgs = { confirm: '確定しました', accept: '提案を承諾しました', reject: '辞退しました', delete: '取り消しました' };
+      showToast(msgs[action] || '更新しました');
+    }).catch(() => {
+      showToast('操作に失敗しました');
+      btn.disabled = false;
+    }).finally(hideSync);
+  }
+
+  // ── Add request ──
+  $('addModalClose').addEventListener('click', () => closeModal('addModal'));
+  $('addModalCancel').addEventListener('click', () => closeModal('addModal'));
+  $('addModal').addEventListener('click', e => { if (e.target === $('addModal')) closeModal('addModal'); });
+
+  $('addModalSubmit').addEventListener('click', async () => {
+    const date = $('addDate').value;
+    const ts = $('addTimeStart').value;
+    const te = $('addTimeEnd').value;
+    if (!date || !ts || !te) { showToast('日付と時間を入力してください'); return; }
+    closeModal('addModal');
+    showSync();
+    try {
+      await addDoc(collection(db, 'requests'), {
+        date, yearMonth: date.substring(0, 7),
+        timeStart: ts, timeEnd: te,
+        status: 'pending',
+        altDate: '', altTimeStart: '', altTimeEnd: '', trainerNote: '',
+        createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+      });
+      showToast('希望日時を追加しました');
+    } catch {
+      showToast('追加に失敗しました');
+    }
+    hideSync();
+  });
+
+  // ── Alternative proposal ──
+  $('altModalClose').addEventListener('click', () => closeModal('altModal'));
+  $('altModalCancel').addEventListener('click', () => closeModal('altModal'));
+  $('altModal').addEventListener('click', e => { if (e.target === $('altModal')) closeModal('altModal'); });
+
+  function openAltModal(id) {
+    pendingAltId = id;
+    const r = requests.find(x => x.id === id);
+    if (!r) return;
+    $('altOriginal').textContent = `${formatDate(r.date)}　${r.timeStart} 〜 ${r.timeEnd}`;
+    $('altDate').value = r.date;
+    $('altTimeStart').value = r.timeStart;
+    $('altTimeEnd').value = r.timeEnd;
+    $('altNote').value = '';
+    openModal('altModal');
+  }
+
+  $('altModalSubmit').addEventListener('click', async () => {
+    const date = $('altDate').value;
+    const ts = $('altTimeStart').value;
+    const te = $('altTimeEnd').value;
+    if (!date || !ts || !te) { showToast('代替日時を入力してください'); return; }
+    closeModal('altModal');
+    showSync();
+    try {
+      await updateDoc(doc(db, 'requests', pendingAltId), {
+        status: 'alternative',
+        altDate: date, altTimeStart: ts, altTimeEnd: te,
+        trainerNote: $('altNote').value,
+        updatedAt: serverTimestamp()
+      });
+      showToast('代替日時を提案しました');
+    } catch {
+      showToast('提案に失敗しました');
+    }
+    hideSync();
+  });
+}
+</script>
+</body>
+</html>
