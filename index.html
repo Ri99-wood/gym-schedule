@@ -553,6 +553,103 @@
     .time-row span { color: var(--gray-400); font-weight: 600; flex-shrink: 0; }
     .modal-footer { padding: 0 20px 20px; display: flex; gap: 10px; justify-content: flex-end; }
 
+    /* Today button in month nav */
+    .today-btn {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-left: 8px;
+    }
+    .today-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+    .today-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Status summary chips */
+    .status-summary {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .summary-chip {
+      flex: 1;
+      min-width: 90px;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 12px;
+      text-align: center;
+    }
+    .summary-chip .num {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .summary-chip .lbl {
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+    .summary-chip.pending .num { color: var(--pending); }
+    .summary-chip.alternative .num { color: var(--alternative); }
+    .summary-chip.confirmed .num { color: var(--confirmed); }
+
+    /* FAB - floating action button (client only) */
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+      font-size: 28px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 90;
+      transition: transform 0.15s;
+    }
+    .fab.show { display: flex; }
+    .fab:hover { transform: scale(1.05); }
+    .fab:active { transform: scale(0.95); }
+
+    /* Confirm dialog */
+    .confirm-dialog .modal { max-width: 360px; }
+    .confirm-dialog .modal-body {
+      padding: 24px 20px 8px;
+      text-align: center;
+    }
+    .confirm-dialog .confirm-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+    .confirm-dialog .confirm-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .confirm-dialog .confirm-msg {
+      font-size: 13px;
+      color: var(--gray-500);
+      line-height: 1.6;
+    }
+    .confirm-dialog .modal-footer {
+      padding: 16px 20px 20px;
+      justify-content: stretch;
+    }
+    .confirm-dialog .modal-footer .btn { flex: 1; padding: 12px; font-size: 14px; }
+
     /* Toast */
     .toast {
       position: fixed;
@@ -667,6 +764,7 @@
       <button id="prevMonth">‹</button>
       <div class="month-label" id="monthLabel"></div>
       <button id="nextMonth">›</button>
+      <button class="today-btn" id="todayBtn">今日</button>
     </div>
 
     <div class="calendar">
@@ -683,11 +781,30 @@
     </div>
     <div class="client-hint" id="clientHint"></div>
 
+    <div class="status-summary" id="statusSummary"></div>
+
     <div>
       <div class="section-title">
         予約一覧 <span class="count-badge" id="requestCount">0</span>
       </div>
       <div class="request-list" id="requestList"></div>
+    </div>
+  </div>
+
+  <button class="fab" id="fabBtn" title="希望日時を追加" aria-label="希望日時を追加">＋</button>
+</div>
+
+<!-- Confirm dialog -->
+<div class="modal-overlay confirm-dialog" id="confirmDialog">
+  <div class="modal">
+    <div class="modal-body">
+      <div class="confirm-icon" id="confirmIcon">⚠️</div>
+      <div class="confirm-title" id="confirmTitle"></div>
+      <div class="confirm-msg" id="confirmMsg"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" id="confirmCancel">キャンセル</button>
+      <button class="btn btn-primary" id="confirmOk">OK</button>
     </div>
   </div>
 </div>
@@ -808,6 +925,9 @@ function initApp() {
     const [h, m] = t.split(':').map(Number);
     return `${pad((h + 1) % 24)}:${pad(m)}`;
   }
+  function timesOverlap(s1, e1, s2, e2) {
+    return s1 < e2 && s2 < e1;
+  }
   function formatDate(s) {
     if (!s) return '';
     const d = new Date(s + 'T00:00:00');
@@ -863,7 +983,9 @@ function initApp() {
       const badge = $('roleBadge');
       badge.textContent = currentRole === 'client' ? 'クライアント' : 'トレーナー';
       badge.className = 'role-badge ' + currentRole;
-      $('clientHint').textContent = currentRole === 'client' ? '日付をタップして希望を追加できます' : '';
+      $('clientHint').textContent = currentRole === 'client' ? '日付をタップ、または右下の＋ボタンから希望を追加' : '';
+      if (currentRole === 'client') $('fabBtn').classList.add('show');
+      else $('fabBtn').classList.remove('show');
       subscribeToMonth();
     } else {
       $('loginError').style.display = 'block';
@@ -879,6 +1001,7 @@ function initApp() {
     $('pinGroup').classList.remove('show');
     $('loginBtn').classList.remove('show');
     $('loginError').style.display = 'none';
+    $('fabBtn').classList.remove('show');
     document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
     selectedRole = null;
   });
@@ -886,12 +1009,62 @@ function initApp() {
   // ── Month navigation ──
   $('prevMonth').addEventListener('click', () => changeMonth(-1));
   $('nextMonth').addEventListener('click', () => changeMonth(1));
+  $('todayBtn').addEventListener('click', () => {
+    const now = new Date();
+    if (currentYear === now.getFullYear() && currentMonth === now.getMonth()) return;
+    currentYear = now.getFullYear();
+    currentMonth = now.getMonth();
+    subscribeToMonth();
+  });
 
   function changeMonth(delta) {
     currentMonth += delta;
     if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
     subscribeToMonth();
+  }
+
+  function updateTodayBtn() {
+    const now = new Date();
+    const isCurrent = currentYear === now.getFullYear() && currentMonth === now.getMonth();
+    $('todayBtn').disabled = isCurrent;
+  }
+
+  // ── FAB ──
+  $('fabBtn').addEventListener('click', () => {
+    const now = new Date();
+    const ts = todayStr();
+    // Default to today if viewing current month, else first day of viewed month
+    const defaultDate = (currentYear === now.getFullYear() && currentMonth === now.getMonth())
+      ? ts
+      : `${currentYear}-${pad(currentMonth+1)}-01`;
+    $('addDate').value = defaultDate;
+    $('addTimeStart').value = '10:00';
+    openModal('addModal');
+  });
+
+  // ── Custom confirm dialog ──
+  function customConfirm({ title, message, okText = 'OK', cancelText = 'キャンセル', danger = false, icon = '⚠️' }) {
+    return new Promise(resolve => {
+      $('confirmIcon').textContent = icon;
+      $('confirmTitle').textContent = title;
+      $('confirmMsg').textContent = message;
+      const okBtn = $('confirmOk');
+      okBtn.textContent = okText;
+      okBtn.className = 'btn ' + (danger ? 'btn-delete' : 'btn-primary');
+      okBtn.style.background = danger ? 'var(--danger)' : '';
+      okBtn.style.color = danger ? '#fff' : '';
+      $('confirmCancel').textContent = cancelText;
+      openModal('confirmDialog');
+      const cleanup = (result) => {
+        closeModal('confirmDialog');
+        okBtn.onclick = null;
+        $('confirmCancel').onclick = null;
+        resolve(result);
+      };
+      okBtn.onclick = () => cleanup(true);
+      $('confirmCancel').onclick = () => cleanup(false);
+    });
   }
 
   // ── Firestore real-time listener ──
@@ -907,6 +1080,8 @@ function initApp() {
       requests.sort((a, b) => a.date.localeCompare(b.date) || a.timeStart.localeCompare(b.timeStart));
       renderCalendar();
       renderRequests();
+      renderSummary();
+      updateTodayBtn();
       hideSync();
     }, () => {
       showToast('データの取得に失敗しました');
@@ -989,18 +1164,49 @@ function initApp() {
     }
   }
 
+  // ── Status summary ──
+  function renderSummary() {
+    const counts = { pending: 0, alternative: 0, confirmed: 0 };
+    requests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+    const labels = currentRole === 'trainer'
+      ? { pending: '要対応', alternative: '返答待ち', confirmed: '確定' }
+      : { pending: '未確定', alternative: '提案あり', confirmed: '確定' };
+    const wrap = $('statusSummary');
+    wrap.innerHTML = `
+      <div class="summary-chip pending"><div class="num">${counts.pending}</div><div class="lbl">${labels.pending}</div></div>
+      <div class="summary-chip alternative"><div class="num">${counts.alternative}</div><div class="lbl">${labels.alternative}</div></div>
+      <div class="summary-chip confirmed"><div class="num">${counts.confirmed}</div><div class="lbl">${labels.confirmed}</div></div>
+    `;
+  }
+
   // ── Request list ──
+  // Sort: actionable items first
+  function sortForRole(arr) {
+    const order = currentRole === 'trainer'
+      ? { pending: 0, alternative: 1, confirmed: 2 }      // trainer: pending needs action
+      : { alternative: 0, pending: 1, confirmed: 2 };      // client: alternative needs response
+    return [...arr].sort((a, b) => {
+      const so = (order[a.status] ?? 9) - (order[b.status] ?? 9);
+      if (so) return so;
+      return a.date.localeCompare(b.date) || a.timeStart.localeCompare(b.timeStart);
+    });
+  }
+
   function renderRequests() {
     const list = $('requestList');
     list.innerHTML = '';
     $('requestCount').textContent = requests.length;
 
     if (!requests.length) {
-      list.innerHTML = '<div class="empty-state">この月の予約はありません</div>';
+      const cta = currentRole === 'client'
+        ? '<br><br>右下の<strong style="color:var(--primary);">＋ボタン</strong>または日付をタップして<br>希望日時を追加してください'
+        : '<br><br>クライアントからの希望待ちです';
+      list.innerHTML = `<div class="empty-state">この月の予約はまだありません${cta}</div>`;
       return;
     }
 
-    requests.forEach(r => {
+    const sorted = sortForRole(requests);
+    sorted.forEach(r => {
       const card = document.createElement('div');
       card.className = 'request-card ' + r.status;
       card.dataset.id = r.id;
@@ -1017,8 +1223,11 @@ function initApp() {
 
       const alts = getAlternatives(r);
       if (r.status === 'alternative' && alts.length) {
+        const altHeading = currentRole === 'client'
+          ? `▶ トレーナーからの代替提案（${alts.length}件）`
+          : `▶ 提案中の代替案（${alts.length}件・返答待ち）`;
         html += `<div class="alt-info" style="background:transparent;padding:0;">
-          <div class="alt-label" style="margin-top:8px;">▶ トレーナーからの代替提案（${alts.length}件）</div>
+          <div class="alt-label" style="margin-top:8px;">${altHeading}</div>
         </div>`;
         html += '<div class="alt-list-card">';
         alts.forEach((a, idx) => {
@@ -1048,36 +1257,59 @@ function initApp() {
         if (r.status === 'pending') {
           html += `<button class="btn btn-confirm" data-action="confirm" data-id="${r.id}">確定する</button>
                    <button class="btn btn-alt" data-action="openAlt" data-id="${r.id}">代替を提案</button>`;
+        } else if (r.status === 'alternative') {
+          html += `<button class="btn btn-alt" data-action="openAlt" data-id="${r.id}">提案を編集</button>`;
         } else if (r.status === 'confirmed') {
           html += `<span style="font-size:13px;color:var(--confirmed);">✓ 確定済み</span>`;
-        } else if (r.status === 'alternative') {
-          html += `<span style="font-size:13px;color:var(--alternative);">クライアントの返答待ち</span>`;
         }
       }
       html += '</div>';
       card.innerHTML = html;
       list.appendChild(card);
     });
-
-    list.addEventListener('click', handleListAction);
   }
+  $('requestList').addEventListener('click', handleListAction);
 
-  function handleListAction(e) {
+  async function handleListAction(e) {
     const btn = e.target.closest('[data-action]');
     if (!btn || btn.disabled) return;
     const { action, id } = btn.dataset;
     const altIndex = btn.dataset.altIndex !== undefined ? parseInt(btn.dataset.altIndex, 10) : null;
+    const r = requests.find(x => x.id === id);
+
+    // Sync action - opens modal
+    if (action === 'openAlt') { openAltModal(id); return; }
+
     btn.disabled = true;
     showSync();
 
-    const actions = {
-      confirm: () => updateDoc(doc(db, 'requests', id), { status: 'confirmed', updatedAt: serverTimestamp() }),
-      accept: () => {
-        const r = requests.find(x => x.id === id);
+    try {
+      if (action === 'confirm') {
+        // Check time conflict with already-confirmed sessions
+        const conflict = requests.find(x =>
+          x.id !== id && x.status === 'confirmed' && x.date === r.date &&
+          timesOverlap(x.timeStart, x.timeEnd, r.timeStart, r.timeEnd)
+        );
+        if (conflict) {
+          hideSync();
+          const ok = await customConfirm({
+            icon: '⚠️',
+            title: '時間が重複しています',
+            message: `${formatDate(conflict.date)} ${conflict.timeStart}〜${conflict.timeEnd} に既に確定済みの予約があります。本当に確定しますか？`,
+            okText: 'それでも確定',
+            danger: true
+          });
+          if (!ok) { btn.disabled = false; return; }
+          showSync();
+        }
+        await updateDoc(doc(db, 'requests', id), { status: 'confirmed', updatedAt: serverTimestamp() });
+        showToast('確定しました');
+      }
+      else if (action === 'accept') {
         const alts = getAlternatives(r);
         const a = alts[altIndex] || alts[0];
-        if (!a) return Promise.reject('No alternative');
-        return updateDoc(doc(db, 'requests', id), {
+        if (!a) throw new Error('no alt');
+        await updateDoc(doc(db, 'requests', id), {
           date: a.date, yearMonth: a.date.substring(0, 7),
           timeStart: a.timeStart, timeEnd: a.timeEnd,
           status: 'confirmed',
@@ -1085,31 +1317,38 @@ function initApp() {
           altDate: '', altTimeStart: '', altTimeEnd: '', trainerNote: '',
           updatedAt: serverTimestamp()
         });
-      },
-      reject: () => updateDoc(doc(db, 'requests', id), {
-        status: 'pending',
-        alternatives: [],
-        altDate: '', altTimeStart: '', altTimeEnd: '', trainerNote: '',
-        updatedAt: serverTimestamp()
-      }),
-      delete: async () => {
-        if (!confirm('この希望日時を取り消しますか？')) { btn.disabled = false; hideSync(); return; }
-        return deleteDoc(doc(db, 'requests', id));
-      },
-      openAlt: () => { openAltModal(id); btn.disabled = false; hideSync(); return null; }
-    };
-
-    const fn = actions[action];
-    if (!fn) return;
-    const result = fn();
-    if (!result) return;
-    result.then(() => {
-      const msgs = { confirm: '確定しました', accept: '提案を承諾しました', reject: '辞退しました', delete: '取り消しました' };
-      showToast(msgs[action] || '更新しました');
-    }).catch(() => {
+        showToast('提案を承諾しました');
+      }
+      else if (action === 'reject') {
+        await updateDoc(doc(db, 'requests', id), {
+          status: 'pending',
+          alternatives: [],
+          altDate: '', altTimeStart: '', altTimeEnd: '', trainerNote: '',
+          updatedAt: serverTimestamp()
+        });
+        showToast('辞退しました');
+      }
+      else if (action === 'delete') {
+        hideSync();
+        const ok = await customConfirm({
+          icon: '🗑️',
+          title: 'この希望を取り消しますか？',
+          message: '一度取り消すと元に戻せません。',
+          okText: '取り消す',
+          danger: true
+        });
+        if (!ok) { btn.disabled = false; return; }
+        showSync();
+        await deleteDoc(doc(db, 'requests', id));
+        showToast('取り消しました');
+      }
+    } catch (err) {
+      console.error(err);
       showToast('操作に失敗しました');
       btn.disabled = false;
-    }).finally(hideSync);
+    } finally {
+      hideSync();
+    }
   }
 
   // ── Add request ──
