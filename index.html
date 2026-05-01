@@ -305,7 +305,11 @@
       overflow: hidden;
       text-overflow: ellipsis;
       line-height: 1.3;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
     }
+    .time-pill:hover { transform: scale(1.06); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .time-pill:active { transform: scale(0.96); }
     .time-pill.pending { background: var(--pending-light); color: var(--pending); }
     .time-pill.confirmed { background: var(--confirmed-light); color: var(--confirmed); }
     .time-pill.alternative { background: var(--alternative-light); color: var(--alternative); }
@@ -624,6 +628,33 @@
     .fab:hover { transform: scale(1.05); }
     .fab:active { transform: scale(0.95); }
 
+    /* Detail modal */
+    .detail-hero {
+      text-align: center;
+      padding: 8px 0 12px;
+      border-bottom: 1px solid var(--gray-100);
+      margin-bottom: 16px;
+    }
+    .detail-hero .detail-date {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .detail-hero .detail-time {
+      font-size: 17px;
+      color: var(--gray-600);
+      margin-bottom: 10px;
+    }
+    .detail-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gray-500);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .detail-section { margin-bottom: 14px; }
+
     /* Confirm dialog */
     .confirm-dialog .modal { max-width: 360px; }
     .confirm-dialog .modal-body {
@@ -792,6 +823,18 @@
   </div>
 
   <button class="fab" id="fabBtn" title="希望日時を追加" aria-label="希望日時を追加">＋</button>
+</div>
+
+<!-- Detail modal (tap on calendar event) -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="detailTitle">予約の詳細</h3>
+      <button class="modal-close" id="detailModalClose">×</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-footer" id="detailFooter"></div>
+  </div>
 </div>
 
 <!-- Confirm dialog -->
@@ -1030,6 +1073,154 @@ function initApp() {
     $('todayBtn').disabled = isCurrent;
   }
 
+  // ── Detail modal ──
+  let openDetailId = null;
+  let detailEditMode = false;
+
+  function openDetailModal(id) {
+    const r = requests.find(x => x.id === id);
+    if (!r) return;
+    openDetailId = id;
+    detailEditMode = false;
+    renderDetailModal();
+    openModal('detailModal');
+  }
+
+  function closeDetailModal() {
+    closeModal('detailModal');
+    openDetailId = null;
+    detailEditMode = false;
+  }
+
+  $('detailModalClose').addEventListener('click', closeDetailModal);
+  $('detailModal').addEventListener('click', e => {
+    if (e.target === $('detailModal')) closeDetailModal();
+  });
+
+  function renderDetailModal() {
+    if (openDetailId === null) return;
+    const r = requests.find(x => x.id === openDetailId);
+    if (!r) { closeDetailModal(); return; }
+
+    const body = $('detailBody');
+    const footer = $('detailFooter');
+    const labels = { pending: '未確定', confirmed: '確定', alternative: '代替提案中' };
+
+    // Edit mode (client + pending only)
+    if (detailEditMode && currentRole === 'client' && r.status === 'pending') {
+      body.innerHTML = `
+        <div class="form-group">
+          <label>日付</label>
+          <input type="date" id="editDate" value="${r.date}">
+        </div>
+        <div class="form-group">
+          <label>開始時刻 <span style="color:var(--gray-400);font-weight:400;">(1コマ60分)</span></label>
+          <input type="time" id="editTimeStart" value="${r.timeStart}">
+        </div>
+      `;
+      footer.innerHTML = `
+        <button class="btn btn-cancel" data-detail-action="cancelEdit">キャンセル</button>
+        <button class="btn btn-primary" data-detail-action="saveEdit" data-id="${r.id}">保存</button>
+      `;
+      return;
+    }
+
+    // View mode
+    let html = `
+      <div class="detail-hero">
+        <div class="detail-date">${formatDate(r.date)}</div>
+        <div class="detail-time">${r.timeStart} 〜 ${r.timeEnd}</div>
+        <span class="status-badge ${r.status}">${labels[r.status] || r.status}</span>
+      </div>
+    `;
+
+    const alts = getAlternatives(r);
+    if (r.status === 'alternative' && alts.length) {
+      const altHeading = currentRole === 'client'
+        ? `トレーナーからの代替提案（${alts.length}件）`
+        : `提案中の代替案（${alts.length}件・返答待ち）`;
+      html += `<div class="detail-section">
+        <div class="detail-section-title">${altHeading}</div>
+        <div class="alt-list-card">`;
+      alts.forEach((a, idx) => {
+        html += `<div class="alt-card">
+          <div class="alt-num">案 ${idx + 1}</div>
+          <div class="alt-detail-text">${formatDate(a.date)} ${a.timeStart} 〜 ${a.timeEnd}</div>
+          ${a.note ? `<div class="alt-note-text">💬 ${a.note}</div>` : ''}
+          ${currentRole === 'client' ? `
+            <div class="alt-actions">
+              <button class="alt-accept-btn" data-action="accept" data-id="${r.id}" data-alt-index="${idx}">✓ この提案で確定</button>
+            </div>` : ''}
+        </div>`;
+      });
+      html += '</div></div>';
+    }
+
+    body.innerHTML = html;
+
+    // Footer actions based on role + status
+    let footerHtml = '<button class="btn btn-cancel" data-detail-action="close">閉じる</button>';
+    if (currentRole === 'client') {
+      if (r.status === 'pending') {
+        footerHtml += `<button class="btn btn-delete" data-action="delete" data-id="${r.id}">取り消し</button>`;
+        footerHtml += `<button class="btn btn-primary" data-detail-action="edit">時間を変更</button>`;
+      } else if (r.status === 'alternative') {
+        footerHtml += `<button class="btn btn-reject" data-action="reject" data-id="${r.id}">すべて辞退</button>`;
+      } else if (r.status === 'confirmed') {
+        footerHtml += `<button class="btn btn-delete" data-action="delete" data-id="${r.id}">予約を取り消し</button>`;
+      }
+    } else {
+      if (r.status === 'pending') {
+        footerHtml += `<button class="btn btn-alt" data-action="openAlt" data-id="${r.id}">代替を提案</button>`;
+        footerHtml += `<button class="btn btn-confirm" data-action="confirm" data-id="${r.id}">確定する</button>`;
+      } else if (r.status === 'alternative') {
+        footerHtml += `<button class="btn btn-alt" data-action="openAlt" data-id="${r.id}">提案を編集</button>`;
+      } else if (r.status === 'confirmed') {
+        footerHtml += `<button class="btn btn-delete" data-action="delete" data-id="${r.id}">予約を取り消し</button>`;
+      }
+    }
+    footer.innerHTML = footerHtml;
+  }
+
+  // Detail modal click delegation
+  $('detailModal').addEventListener('click', async e => {
+    const btn = e.target.closest('[data-detail-action]');
+    if (!btn) return;
+    const action = btn.dataset.detailAction;
+    const id = btn.dataset.id;
+
+    if (action === 'close') { closeDetailModal(); return; }
+    if (action === 'edit') { detailEditMode = true; renderDetailModal(); return; }
+    if (action === 'cancelEdit') { detailEditMode = false; renderDetailModal(); return; }
+    if (action === 'saveEdit') {
+      const date = $('editDate').value;
+      const ts = $('editTimeStart').value;
+      if (!date || !ts) { showToast('日付と開始時刻を入力してください'); return; }
+      btn.disabled = true;
+      showSync();
+      try {
+        await updateDoc(doc(db, 'requests', id), {
+          date, yearMonth: date.substring(0, 7),
+          timeStart: ts, timeEnd: addHour(ts),
+          updatedAt: serverTimestamp()
+        });
+        showToast('変更しました');
+        detailEditMode = false;
+        // Re-render will happen via Firestore listener; close modal for clarity
+        closeDetailModal();
+      } catch {
+        showToast('変更に失敗しました');
+        btn.disabled = false;
+      }
+      hideSync();
+    }
+  });
+
+  // Reuse handleListAction for data-action buttons inside detail modal
+  $('detailModal').addEventListener('click', e => {
+    if (e.target.closest('[data-action]')) handleListAction(e);
+  });
+
   // ── FAB ──
   $('fabBtn').addEventListener('click', () => {
     const now = new Date();
@@ -1082,6 +1273,7 @@ function initApp() {
       renderRequests();
       renderSummary();
       updateTodayBtn();
+      if (openDetailId !== null) renderDetailModal();
       hideSync();
     }, () => {
       showToast('データの取得に失敗しました');
@@ -1133,14 +1325,25 @@ function initApp() {
         dayReqs.slice(0, 3).forEach(r => {
           const pill = document.createElement('div');
           pill.className = 'time-pill ' + r.status;
+          pill.dataset.id = r.id;
+          pill.title = `${r.timeStart}〜${r.timeEnd}（タップで詳細）`;
           const icon = r.status === 'confirmed' ? '✓ ' : r.status === 'alternative' ? '⇄ ' : '';
           pill.textContent = icon + r.timeStart;
+          pill.addEventListener('click', e => {
+            e.stopPropagation();
+            openDetailModal(r.id);
+          });
           list.appendChild(pill);
         });
         if (dayReqs.length > 3) {
           const more = document.createElement('div');
-          more.style.cssText = 'font-size:9px;color:var(--gray-400);text-align:center;margin-top:1px;';
-          more.textContent = `+${dayReqs.length - 3}`;
+          more.style.cssText = 'font-size:9px;color:var(--gray-400);text-align:center;margin-top:1px;cursor:pointer;';
+          more.textContent = `+${dayReqs.length - 3}件`;
+          more.addEventListener('click', e => {
+            e.stopPropagation();
+            // Open detail for first hidden item
+            openDetailModal(dayReqs[3].id);
+          });
           list.appendChild(more);
         }
         cell.appendChild(list);
@@ -1426,6 +1629,8 @@ function initApp() {
   }
 
   function openAltModal(id) {
+    // Close detail modal first if open (so user sees the alt modal cleanly)
+    if (openDetailId !== null) closeDetailModal();
     pendingAltId = id;
     const r = requests.find(x => x.id === id);
     if (!r) return;
