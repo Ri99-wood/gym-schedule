@@ -265,10 +265,10 @@
     .calendar-header div:last-child { color: var(--primary); }
     .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
     .calendar-cell {
-      min-height: 72px;
+      min-height: 88px;
       border-right: 1px solid var(--gray-100);
       border-bottom: 1px solid var(--gray-100);
-      padding: 6px;
+      padding: 5px 4px;
       cursor: pointer;
       transition: background 0.12s;
       position: relative;
@@ -278,18 +278,111 @@
     .calendar-cell.empty { cursor: default; }
     .calendar-cell.today { background: var(--primary-light); }
     .calendar-cell.past { opacity: 0.45; cursor: default; }
-    .day-number { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .day-number { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
     .calendar-cell:nth-child(7n+1) .day-number { color: var(--danger); }
     .calendar-cell:nth-child(7n) .day-number { color: var(--primary); }
-    .dot-container { display: flex; gap: 3px; flex-wrap: wrap; }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .status-dot.pending { background: var(--pending); }
-    .status-dot.confirmed { background: var(--confirmed); }
-    .status-dot.alternative { background: var(--alternative); }
+
+    .time-list { display: flex; flex-direction: column; gap: 2px; }
+    .time-pill {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 4px;
+      border-radius: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+    .time-pill.pending { background: var(--pending-light); color: var(--pending); }
+    .time-pill.confirmed { background: var(--confirmed-light); color: var(--confirmed); }
+    .time-pill.alternative { background: var(--alternative-light); color: var(--alternative); }
+    .time-pill .pill-icon { margin-right: 2px; }
 
     /* Legend */
-    .legend { display: flex; gap: 16px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
-    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray-500); }
+    .legend { display: flex; gap: 12px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--gray-500); }
+    .legend-pill {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border-radius: 3px;
+    }
+    .legend-pill.pending { background: var(--pending-light); border: 1px solid var(--pending); }
+    .legend-pill.confirmed { background: var(--confirmed-light); border: 1px solid var(--confirmed); }
+    .legend-pill.alternative { background: var(--alternative-light); border: 1px solid var(--alternative); }
+
+    /* Alt rows in modal */
+    .alt-row {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .alt-row-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-600);
+    }
+    .alt-row-remove {
+      background: none;
+      border: none;
+      color: var(--danger);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .alt-row-remove:hover { background: var(--gray-100); }
+    .alt-row .form-group { margin-bottom: 8px; }
+    .alt-row .form-group:last-child { margin-bottom: 0; }
+    .add-alt-btn {
+      width: 100%;
+      padding: 10px;
+      border: 2px dashed var(--gray-300);
+      background: transparent;
+      border-radius: 8px;
+      color: var(--gray-500);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .add-alt-btn:hover { border-color: var(--alternative); color: var(--alternative); }
+
+    /* Alt list in request card */
+    .alt-list-card { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .alt-card {
+      background: var(--alternative-light);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+    }
+    .alt-card .alt-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--alternative);
+      margin-bottom: 4px;
+    }
+    .alt-card .alt-detail-text { font-weight: 700; color: var(--gray-700); }
+    .alt-card .alt-note-text { color: var(--gray-500); margin-top: 4px; font-size: 12px; }
+    .alt-card .alt-actions { display: flex; gap: 6px; margin-top: 10px; }
+    .alt-card .alt-accept-btn {
+      flex: 1;
+      padding: 7px 10px;
+      background: var(--confirmed);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .alt-card .alt-accept-btn:hover { opacity: 0.85; }
     .client-hint {
       text-align: center;
       font-size: 13px;
@@ -467,10 +560,10 @@
     .toast.show { transform: translateX(-50%) translateY(0); }
 
     @media (max-width: 599px) {
-      .main { padding: 12px; }
-      .calendar-cell { min-height: 56px; padding: 4px; }
-      .day-number { font-size: 12px; }
-      .status-dot { width: 6px; height: 6px; }
+      .main { padding: 10px; }
+      .calendar-cell { min-height: 70px; padding: 3px 2px; }
+      .day-number { font-size: 11px; margin-bottom: 2px; }
+      .time-pill { font-size: 9px; padding: 1px 3px; }
       .month-label { font-size: 17px; min-width: 150px; }
       .login-card { padding: 32px 20px; }
     }
@@ -571,9 +664,9 @@
     </div>
 
     <div class="legend">
-      <div class="legend-item"><div class="status-dot pending"></div> 希望（未確定）</div>
-      <div class="legend-item"><div class="status-dot confirmed"></div> 確定</div>
-      <div class="legend-item"><div class="status-dot alternative"></div> 代替提案あり</div>
+      <div class="legend-item"><span class="legend-pill pending"></span> 希望（未確定）</div>
+      <div class="legend-item"><span class="legend-pill confirmed"></span> 確定</div>
+      <div class="legend-item"><span class="legend-pill alternative"></span> 代替提案あり</div>
     </div>
     <div class="client-hint" id="clientHint"></div>
 
@@ -626,22 +719,8 @@
         <label>元の希望</label>
         <div id="altOriginal" style="font-size:14px;color:var(--gray-500);padding:8px 0;"></div>
       </div>
-      <div class="form-group">
-        <label>代替日付</label>
-        <input type="date" id="altDate">
-      </div>
-      <div class="form-group">
-        <label>代替時間帯</label>
-        <div class="time-row">
-          <input type="time" id="altTimeStart" value="10:00">
-          <span>〜</span>
-          <input type="time" id="altTimeEnd" value="11:00">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>メモ（任意）</label>
-        <textarea id="altNote" placeholder="例：この時間は別の方が入っています"></textarea>
-      </div>
+      <div id="altList"></div>
+      <button type="button" class="add-alt-btn" id="addAltBtn">＋ さらに提案を追加</button>
     </div>
     <div class="modal-footer">
       <button class="btn btn-cancel" id="altModalCancel">キャンセル</button>
@@ -711,6 +790,12 @@ function initApp() {
     if (!s) return '';
     const d = new Date(s + 'T00:00:00');
     return `${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）`;
+  }
+  // Convert legacy single-alt fields to alternatives array
+  function getAlternatives(r) {
+    if (Array.isArray(r.alternatives) && r.alternatives.length) return r.alternatives;
+    if (r.altDate) return [{ date: r.altDate, timeStart: r.altTimeStart, timeEnd: r.altTimeEnd, note: r.trainerNote || '' }];
+    return [];
   }
 
   let toastTimer;
@@ -834,14 +919,22 @@ function initApp() {
 
       const dayReqs = requests.filter(r => r.date === dateStr);
       if (dayReqs.length) {
-        const dots = document.createElement('div');
-        dots.className = 'dot-container';
-        dayReqs.forEach(r => {
-          const dot = document.createElement('div');
-          dot.className = 'status-dot ' + r.status;
-          dots.appendChild(dot);
+        const list = document.createElement('div');
+        list.className = 'time-list';
+        dayReqs.slice(0, 3).forEach(r => {
+          const pill = document.createElement('div');
+          pill.className = 'time-pill ' + r.status;
+          const icon = r.status === 'confirmed' ? '✓ ' : r.status === 'alternative' ? '⇄ ' : '';
+          pill.textContent = icon + r.timeStart;
+          list.appendChild(pill);
         });
-        cell.appendChild(dots);
+        if (dayReqs.length > 3) {
+          const more = document.createElement('div');
+          more.style.cssText = 'font-size:9px;color:var(--gray-400);text-align:center;margin-top:1px;';
+          more.textContent = `+${dayReqs.length - 3}`;
+          list.appendChild(more);
+        }
+        cell.appendChild(list);
       }
 
       if (!isPast) {
@@ -889,19 +982,30 @@ function initApp() {
           <span class="status-badge ${r.status}">${labels[r.status] || r.status}</span>
         </div>`;
 
-      if (r.status === 'alternative') {
-        html += `<div class="alt-info">
-          <div class="alt-label">▶ トレーナーからの代替提案</div>
-          <div class="alt-detail">${formatDate(r.altDate)} ${r.altTimeStart} 〜 ${r.altTimeEnd}</div>
-          ${r.trainerNote ? `<div class="alt-note">💬 ${r.trainerNote}</div>` : ''}
+      const alts = getAlternatives(r);
+      if (r.status === 'alternative' && alts.length) {
+        html += `<div class="alt-info" style="background:transparent;padding:0;">
+          <div class="alt-label" style="margin-top:8px;">▶ トレーナーからの代替提案（${alts.length}件）</div>
         </div>`;
+        html += '<div class="alt-list-card">';
+        alts.forEach((a, idx) => {
+          html += `<div class="alt-card">
+            <div class="alt-num">案 ${idx + 1}</div>
+            <div class="alt-detail-text">${formatDate(a.date)} ${a.timeStart} 〜 ${a.timeEnd}</div>
+            ${a.note ? `<div class="alt-note-text">💬 ${a.note}</div>` : ''}
+            ${currentRole === 'client' ? `
+              <div class="alt-actions">
+                <button class="alt-accept-btn" data-action="accept" data-id="${r.id}" data-alt-index="${idx}">✓ この提案で確定</button>
+              </div>` : ''}
+          </div>`;
+        });
+        html += '</div>';
       }
 
       html += '<div class="request-actions">';
       if (currentRole === 'client') {
         if (r.status === 'alternative') {
-          html += `<button class="btn btn-accept" data-action="accept" data-id="${r.id}">✓ 承諾する</button>
-                   <button class="btn btn-reject" data-action="reject" data-id="${r.id}">辞退</button>`;
+          html += `<button class="btn btn-reject" data-action="reject" data-id="${r.id}">すべて辞退</button>`;
         } else if (r.status === 'pending') {
           html += `<button class="btn btn-delete" data-action="delete" data-id="${r.id}">取り消し</button>`;
         } else if (r.status === 'confirmed') {
@@ -929,6 +1033,7 @@ function initApp() {
     const btn = e.target.closest('[data-action]');
     if (!btn || btn.disabled) return;
     const { action, id } = btn.dataset;
+    const altIndex = btn.dataset.altIndex !== undefined ? parseInt(btn.dataset.altIndex, 10) : null;
     btn.disabled = true;
     showSync();
 
@@ -936,15 +1041,21 @@ function initApp() {
       confirm: () => updateDoc(doc(db, 'requests', id), { status: 'confirmed', updatedAt: serverTimestamp() }),
       accept: () => {
         const r = requests.find(x => x.id === id);
+        const alts = getAlternatives(r);
+        const a = alts[altIndex] || alts[0];
+        if (!a) return Promise.reject('No alternative');
         return updateDoc(doc(db, 'requests', id), {
-          date: r.altDate, timeStart: r.altTimeStart, timeEnd: r.altTimeEnd,
+          date: a.date, yearMonth: a.date.substring(0, 7),
+          timeStart: a.timeStart, timeEnd: a.timeEnd,
           status: 'confirmed',
+          alternatives: [],
           altDate: '', altTimeStart: '', altTimeEnd: '', trainerNote: '',
           updatedAt: serverTimestamp()
         });
       },
       reject: () => updateDoc(doc(db, 'requests', id), {
         status: 'pending',
+        alternatives: [],
         altDate: '', altTimeStart: '', altTimeEnd: '', trainerNote: '',
         updatedAt: serverTimestamp()
       }),
@@ -999,34 +1110,95 @@ function initApp() {
   $('altModalClose').addEventListener('click', () => closeModal('altModal'));
   $('altModalCancel').addEventListener('click', () => closeModal('altModal'));
   $('altModal').addEventListener('click', e => { if (e.target === $('altModal')) closeModal('altModal'); });
+  $('addAltBtn').addEventListener('click', () => addAltRow());
+
+  function buildAltRow(idx, prefill = {}) {
+    const row = document.createElement('div');
+    row.className = 'alt-row';
+    row.innerHTML = `
+      <div class="alt-row-header">
+        <span>提案 ${idx + 1}</span>
+        <button type="button" class="alt-row-remove" data-action="removeRow">${idx === 0 ? '' : '✕ 削除'}</button>
+      </div>
+      <div class="form-group">
+        <label>日付</label>
+        <input type="date" class="alt-date-input" value="${prefill.date || ''}">
+      </div>
+      <div class="form-group">
+        <label>時間帯</label>
+        <div class="time-row">
+          <input type="time" class="alt-ts-input" value="${prefill.timeStart || '10:00'}">
+          <span>〜</span>
+          <input type="time" class="alt-te-input" value="${prefill.timeEnd || '11:00'}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>メモ（任意）</label>
+        <textarea class="alt-note-input" placeholder="例：この時間は空きがあります">${prefill.note || ''}</textarea>
+      </div>`;
+    row.querySelector('.alt-row-remove').addEventListener('click', () => {
+      row.remove();
+      renumberAltRows();
+    });
+    return row;
+  }
+
+  function renumberAltRows() {
+    document.querySelectorAll('#altList .alt-row').forEach((row, i) => {
+      row.querySelector('.alt-row-header span').textContent = `提案 ${i + 1}`;
+      const removeBtn = row.querySelector('.alt-row-remove');
+      removeBtn.textContent = i === 0 ? '' : '✕ 削除';
+    });
+  }
+
+  function addAltRow(prefill) {
+    const list = $('altList');
+    const idx = list.children.length;
+    list.appendChild(buildAltRow(idx, prefill));
+  }
 
   function openAltModal(id) {
     pendingAltId = id;
     const r = requests.find(x => x.id === id);
     if (!r) return;
     $('altOriginal').textContent = `${formatDate(r.date)}　${r.timeStart} 〜 ${r.timeEnd}`;
-    $('altDate').value = r.date;
-    $('altTimeStart').value = r.timeStart;
-    $('altTimeEnd').value = r.timeEnd;
-    $('altNote').value = '';
+    $('altList').innerHTML = '';
+    // Pre-fill existing alternatives, or one empty row using original date
+    const existing = getAlternatives(r);
+    if (existing.length) {
+      existing.forEach(a => addAltRow(a));
+    } else {
+      addAltRow({ date: r.date, timeStart: r.timeStart, timeEnd: r.timeEnd });
+    }
     openModal('altModal');
   }
 
   $('altModalSubmit').addEventListener('click', async () => {
-    const date = $('altDate').value;
-    const ts = $('altTimeStart').value;
-    const te = $('altTimeEnd').value;
-    if (!date || !ts || !te) { showToast('代替日時を入力してください'); return; }
+    const rows = document.querySelectorAll('#altList .alt-row');
+    const alternatives = [];
+    let invalid = false;
+    rows.forEach(row => {
+      const date = row.querySelector('.alt-date-input').value;
+      const ts = row.querySelector('.alt-ts-input').value;
+      const te = row.querySelector('.alt-te-input').value;
+      const note = row.querySelector('.alt-note-input').value;
+      if (!date || !ts || !te) { invalid = true; return; }
+      alternatives.push({ date, timeStart: ts, timeEnd: te, note });
+    });
+    if (invalid || !alternatives.length) {
+      showToast('すべての提案で日付と時間を入力してください');
+      return;
+    }
     closeModal('altModal');
     showSync();
     try {
       await updateDoc(doc(db, 'requests', pendingAltId), {
         status: 'alternative',
-        altDate: date, altTimeStart: ts, altTimeEnd: te,
-        trainerNote: $('altNote').value,
+        alternatives,
+        altDate: '', altTimeStart: '', altTimeEnd: '', trainerNote: '',
         updatedAt: serverTimestamp()
       });
-      showToast('代替日時を提案しました');
+      showToast(`${alternatives.length}件の代替を提案しました`);
     } catch {
       showToast('提案に失敗しました');
     }
