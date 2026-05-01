@@ -281,6 +281,19 @@
     .day-number { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
     .calendar-cell:nth-child(7n+1) .day-number { color: var(--danger); }
     .calendar-cell:nth-child(7n) .day-number { color: var(--primary); }
+    .calendar-cell.holiday .day-number { color: var(--danger); }
+    .calendar-cell.holiday { background: #fef2f2; }
+    .calendar-cell.holiday.today { background: #fee2e2; }
+    .holiday-name {
+      font-size: 9px;
+      color: var(--danger);
+      font-weight: 600;
+      line-height: 1.2;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     .time-list { display: flex; flex-direction: column; gap: 2px; }
     .time-pill {
@@ -773,6 +786,13 @@ function initApp() {
   let requests = [];
   let unsubscribe = null;
   let pendingAltId = null;
+  let holidays = {}; // { "2026-05-03": "憲法記念日", ... }
+
+  // Fetch Japanese holidays from holidays-jp.github.io (cached for the session)
+  fetch('https://holidays-jp.github.io/api/v1/date.json')
+    .then(r => r.json())
+    .then(data => { holidays = data; renderCalendar(); })
+    .catch(() => { /* offline fallback: skip holidays */ });
 
   const today = new Date();
   currentYear = today.getFullYear();
@@ -910,12 +930,24 @@ function initApp() {
       const dateStr = `${currentYear}-${pad(currentMonth+1)}-${pad(d)}`;
       const cell = document.createElement('div');
       const isPast = dateStr < ts;
-      cell.className = 'calendar-cell' + (dateStr === ts ? ' today' : '') + (isPast ? ' past' : '');
+      const holidayName = holidays[dateStr];
+      cell.className = 'calendar-cell'
+        + (dateStr === ts ? ' today' : '')
+        + (isPast ? ' past' : '')
+        + (holidayName ? ' holiday' : '');
 
       const num = document.createElement('div');
       num.className = 'day-number';
       num.textContent = d;
       cell.appendChild(num);
+
+      if (holidayName) {
+        const hn = document.createElement('div');
+        hn.className = 'holiday-name';
+        hn.textContent = holidayName;
+        hn.title = holidayName;
+        cell.appendChild(hn);
+      }
 
       const dayReqs = requests.filter(r => r.date === dateStr);
       if (dayReqs.length) {
