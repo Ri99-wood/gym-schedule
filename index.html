@@ -263,15 +263,17 @@
     }
     .calendar-header div:first-child { color: var(--danger); }
     .calendar-header div:last-child { color: var(--primary); }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
     .calendar-cell {
       min-height: 88px;
+      min-width: 0;
       border-right: 1px solid var(--gray-100);
       border-bottom: 1px solid var(--gray-100);
       padding: 5px 4px;
       cursor: pointer;
       transition: background 0.12s;
       position: relative;
+      overflow: hidden;
     }
     .calendar-cell:nth-child(7n) { border-right: none; }
     .calendar-cell:hover:not(.empty) { background: var(--gray-50); }
@@ -558,8 +560,13 @@
     .modal-footer { padding: 0 20px 20px; display: flex; gap: 10px; justify-content: flex-end; }
 
     /* Today button in month nav */
+    .month-nav { position: relative; }
     .today-btn {
-      padding: 6px 14px;
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 6px 12px;
       font-size: 12px;
       font-weight: 600;
       color: var(--primary);
@@ -568,7 +575,8 @@
       border-radius: 16px;
       cursor: pointer;
       transition: all 0.15s;
-      margin-left: 8px;
+      white-space: nowrap;
+      line-height: 1;
     }
     .today-btn:hover { background: var(--primary-light); border-color: var(--primary); }
     .today-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -757,7 +765,9 @@
       .calendar-cell { min-height: 70px; padding: 3px 2px; }
       .day-number { font-size: 11px; margin-bottom: 2px; }
       .time-pill { font-size: 9px; padding: 1px 3px; }
-      .month-label { font-size: 17px; min-width: 150px; }
+      .month-label { font-size: 17px; min-width: 130px; }
+      .month-nav { gap: 12px; padding: 0 60px; }
+      .today-btn { padding: 5px 10px; font-size: 11px; }
       .login-card { padding: 32px 20px; }
     }
   </style>
