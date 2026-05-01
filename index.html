@@ -982,7 +982,6 @@ function initApp() {
     if (currentRole === 'client') {
       $('addDate').value = dateStr;
       $('addTimeStart').value = '10:00';
-      $('addTimeEnd').value = '11:00';
       openModal('addModal');
     } else if (dayReqs.length) {
       const el = document.querySelector(`.request-card[data-id="${dayReqs[0].id}"]`);
