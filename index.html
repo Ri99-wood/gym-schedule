@@ -333,7 +333,7 @@
     .alt-row {
       background: var(--gray-50);
       border: 1px solid var(--gray-200);
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 12px;
       margin-bottom: 10px;
       position: relative;
@@ -342,10 +342,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       font-size: 13px;
-      font-weight: 600;
-      color: var(--gray-600);
+      font-weight: 700;
+      color: var(--alternative);
     }
     .alt-row-remove {
       background: none;
@@ -357,8 +357,76 @@
       border-radius: 4px;
     }
     .alt-row-remove:hover { background: var(--gray-100); }
-    .alt-row .form-group { margin-bottom: 8px; }
-    .alt-row .form-group:last-child { margin-bottom: 0; }
+
+    .alt-quick-date {
+      position: relative;
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 10px 14px;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: border-color 0.15s;
+    }
+    .alt-quick-date:hover { border-color: var(--alternative); }
+    .alt-quick-date .alt-date-text {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-800);
+    }
+    .alt-quick-date input[type=date] {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      opacity: 0; cursor: pointer;
+      padding: 0; border: none; font-size: 16px;
+    }
+
+    .alt-time-selector {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+    }
+    .alt-time-selector input[type=time] {
+      font-size: 18px;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      outline: none;
+      width: auto;
+      padding: 0;
+      color: var(--gray-800);
+    }
+    .alt-time-selector .alt-time-end {
+      margin-left: auto;
+      color: var(--gray-500);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .alt-time-selector .alt-time-end strong {
+      font-size: 15px;
+      color: var(--gray-700);
+    }
+
+    .alt-row .alt-note-input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      resize: vertical;
+      min-height: 44px;
+      transition: border-color 0.15s;
+    }
+    .alt-row .alt-note-input:focus { border-color: var(--alternative); }
     .add-alt-btn {
       width: 100%;
       padding: 10px;
@@ -837,7 +905,8 @@
       .login-card { padding: 32px 20px; }
       .modal-header { padding: 14px 16px 0; }
       .modal-body { padding: 14px 16px; }
-      .modal-footer { padding: 0 16px 16px; }
+      .modal-footer { padding: 0 16px 16px; gap: 8px; }
+      .modal-footer .btn { flex: 1; min-width: 0; padding: 11px 6px; font-size: 13px; white-space: nowrap; }
       .quick-date-picker .date-text { font-size: 19px; }
       .time-selector { padding: 12px 14px; }
       .time-selector input[type="time"] { font-size: 20px; }
@@ -1848,23 +1917,41 @@ function initApp() {
   function buildAltRow(idx, prefill = {}) {
     const row = document.createElement('div');
     row.className = 'alt-row';
+    const date = prefill.date || '';
+    const ts = prefill.timeStart || '10:00';
+    const te = prefill.timeEnd || addHour(ts);
+    const dateText = date ? formatDate(date) : '日付を選択 ▾';
     row.innerHTML = `
       <div class="alt-row-header">
         <span>提案 ${idx + 1}</span>
-        <button type="button" class="alt-row-remove" data-action="removeRow">${idx === 0 ? '' : '✕ 削除'}</button>
+        <button type="button" class="alt-row-remove">${idx === 0 ? '' : '✕ 削除'}</button>
       </div>
-      <div class="form-group">
-        <label>日付</label>
-        <input type="date" class="alt-date-input" value="${prefill.date || ''}">
+      <div class="alt-quick-date">
+        <span class="alt-date-text">${dateText}</span>
+        <input type="date" class="alt-date-input" value="${date}">
       </div>
-      <div class="form-group">
-        <label>開始時刻 <span style="color:var(--gray-400);font-weight:400;">(60分)</span></label>
-        <input type="time" class="alt-ts-input" value="${prefill.timeStart || '10:00'}">
+      <div class="alt-time-selector">
+        <input type="time" class="alt-ts-input" value="${ts}">
+        <span class="alt-time-end">終了 <strong class="alt-te-text">${te}</strong></span>
       </div>
-      <div class="form-group">
-        <label>メモ（任意）</label>
-        <textarea class="alt-note-input" placeholder="例：この時間は空きがあります">${prefill.note || ''}</textarea>
-      </div>`;
+      <textarea class="alt-note-input" placeholder="メモ（任意） — 例：この時間は空きがあります">${prefill.note || ''}</textarea>`;
+
+    // Live update date text
+    const dateInput = row.querySelector('.alt-date-input');
+    const dateTextEl = row.querySelector('.alt-date-text');
+    const updateDateText = () => {
+      dateTextEl.textContent = dateInput.value ? formatDate(dateInput.value) : '日付を選択 ▾';
+    };
+    dateInput.addEventListener('change', updateDateText);
+    dateInput.addEventListener('input', updateDateText);
+
+    // Live update end time
+    const tsInput = row.querySelector('.alt-ts-input');
+    const teEl = row.querySelector('.alt-te-text');
+    const updateEnd = () => { teEl.textContent = addHour(tsInput.value) || '--:--'; };
+    tsInput.addEventListener('change', updateEnd);
+    tsInput.addEventListener('input', updateEnd);
+
     row.querySelector('.alt-row-remove').addEventListener('click', () => {
       row.remove();
       renumberAltRows();
