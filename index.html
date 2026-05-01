@@ -705,12 +705,8 @@
         <input type="date" id="addDate">
       </div>
       <div class="form-group">
-        <label>時間帯</label>
-        <div class="time-row">
-          <input type="time" id="addTimeStart" value="10:00">
-          <span>〜</span>
-          <input type="time" id="addTimeEnd" value="11:00">
-        </div>
+        <label>開始時刻 <span style="color:var(--gray-400);font-weight:400;">(1コマ60分)</span></label>
+        <input type="time" id="addTimeStart" value="10:00">
       </div>
     </div>
     <div class="modal-footer">
@@ -806,6 +802,12 @@ function initApp() {
   };
   function pad(n) { return String(n).padStart(2, '0'); }
   function padMonth(y, m) { return `${y}-${pad(m + 1)}`; }
+  // 1コマ60分: 開始時刻から終了時刻を自動算出
+  function addHour(t) {
+    if (!t) return '';
+    const [h, m] = t.split(':').map(Number);
+    return `${pad((h + 1) % 24)}:${pad(m)}`;
+  }
   function formatDate(s) {
     if (!s) return '';
     const d = new Date(s + 'T00:00:00');
@@ -1119,8 +1121,8 @@ function initApp() {
   $('addModalSubmit').addEventListener('click', async () => {
     const date = $('addDate').value;
     const ts = $('addTimeStart').value;
-    const te = $('addTimeEnd').value;
-    if (!date || !ts || !te) { showToast('日付と時間を入力してください'); return; }
+    if (!date || !ts) { showToast('日付と開始時刻を入力してください'); return; }
+    const te = addHour(ts);
     closeModal('addModal');
     showSync();
     try {
@@ -1157,12 +1159,8 @@ function initApp() {
         <input type="date" class="alt-date-input" value="${prefill.date || ''}">
       </div>
       <div class="form-group">
-        <label>時間帯</label>
-        <div class="time-row">
-          <input type="time" class="alt-ts-input" value="${prefill.timeStart || '10:00'}">
-          <span>〜</span>
-          <input type="time" class="alt-te-input" value="${prefill.timeEnd || '11:00'}">
-        </div>
+        <label>開始時刻 <span style="color:var(--gray-400);font-weight:400;">(60分)</span></label>
+        <input type="time" class="alt-ts-input" value="${prefill.timeStart || '10:00'}">
       </div>
       <div class="form-group">
         <label>メモ（任意）</label>
@@ -1212,13 +1210,12 @@ function initApp() {
     rows.forEach(row => {
       const date = row.querySelector('.alt-date-input').value;
       const ts = row.querySelector('.alt-ts-input').value;
-      const te = row.querySelector('.alt-te-input').value;
       const note = row.querySelector('.alt-note-input').value;
-      if (!date || !ts || !te) { invalid = true; return; }
-      alternatives.push({ date, timeStart: ts, timeEnd: te, note });
+      if (!date || !ts) { invalid = true; return; }
+      alternatives.push({ date, timeStart: ts, timeEnd: addHour(ts), note });
     });
     if (invalid || !alternatives.length) {
-      showToast('すべての提案で日付と時間を入力してください');
+      showToast('すべての提案で日付と開始時刻を入力してください');
       return;
     }
     closeModal('altModal');
