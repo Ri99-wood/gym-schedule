@@ -628,6 +628,58 @@
     .fab:hover { transform: scale(1.05); }
     .fab:active { transform: scale(0.95); }
 
+    /* Export button */
+    .export-bar {
+      margin-bottom: 16px;
+    }
+    .export-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 14px;
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      color: var(--gray-700);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      box-shadow: var(--shadow);
+    }
+    .export-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+    .export-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .export-btn .ico { font-size: 16px; }
+
+    .gcal-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #4285f4;
+      border-radius: 8px;
+      color: #4285f4;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s;
+      margin-bottom: 12px;
+    }
+    .gcal-btn:hover { background: #e8f0fe; }
+
     /* Detail modal */
     .detail-hero {
       text-align: center;
@@ -814,6 +866,13 @@
 
     <div class="status-summary" id="statusSummary"></div>
 
+    <div class="export-bar" id="exportBar" style="display:none;">
+      <button class="export-btn" id="exportBtn">
+        <span class="ico">📅</span>
+        <span id="exportBtnLabel">確定済みをエクスポート</span>
+      </button>
+    </div>
+
     <div>
       <div class="section-title">
         予約一覧 <span class="count-badge" id="requestCount">0</span>
@@ -970,6 +1029,81 @@ function initApp() {
   }
   function timesOverlap(s1, e1, s2, e2) {
     return s1 < e2 && s2 < e1;
+  }
+
+  // ── Calendar export (Google Calendar / .ics) ──
+  function fmtICSTime(date, time) {
+    return date.replace(/-/g, '') + 'T' + time.replace(':', '') + '00';
+  }
+  function icsEscape(s) {
+    return String(s || '').replace(/\\/g, '\\\\').replace(/,/g, '\\,').replace(/;/g, '\\;').replace(/\r?\n/g, '\\n');
+  }
+  function buildGoogleCalUrl(r, title = 'パーソナルトレーニング') {
+    const start = fmtICSTime(r.date, r.timeStart);
+    const end = fmtICSTime(r.date, r.timeEnd);
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: title,
+      dates: `${start}/${end}`,
+      details: 'パーソナルトレーニング予約（gym-schedule で確定）',
+      ctz: 'Asia/Tokyo'
+    });
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  }
+  function buildICS(events, title = 'パーソナルトレーニング') {
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//gym-schedule//JP',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VTIMEZONE',
+      'TZID:Asia/Tokyo',
+      'BEGIN:STANDARD',
+      'DTSTART:19700101T000000',
+      'TZOFFSETFROM:+0900',
+      'TZOFFSETTO:+0900',
+      'TZNAME:JST',
+      'END:STANDARD',
+      'END:VTIMEZONE'
+    ];
+    events.forEach(r => {
+      lines.push(
+        'BEGIN:VEVENT',
+        `UID:${r.id}@gym-schedule`,
+        `DTSTAMP:${stamp}`,
+        `DTSTART;TZID=Asia/Tokyo:${fmtICSTime(r.date, r.timeStart)}`,
+        `DTEND;TZID=Asia/Tokyo:${fmtICSTime(r.date, r.timeEnd)}`,
+        `SUMMARY:${icsEscape(title)}`,
+        `DESCRIPTION:${icsEscape('パーソナルトレーニング予約')}`,
+        'END:VEVENT'
+      );
+    });
+    lines.push('END:VCALENDAR');
+    return lines.join('\r\n');
+  }
+  function downloadFile(content, filename, mime = 'text/calendar;charset=utf-8') {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  }
+  function exportConfirmed() {
+    const confirmed = requests.filter(r => r.status === 'confirmed');
+    if (!confirmed.length) {
+      showToast('エクスポートする確定済みの予約がありません');
+      return;
+    }
+    const ym = padMonth(currentYear, currentMonth);
+    const ics = buildICS(confirmed);
+    downloadFile(ics, `gym-schedule-${ym}.ics`);
+    showToast(`${confirmed.length}件をエクスポートしました`);
   }
   function formatDate(s) {
     if (!s) return '';
@@ -1133,6 +1267,13 @@ function initApp() {
         <span class="status-badge ${r.status}">${labels[r.status] || r.status}</span>
       </div>
     `;
+
+    // Google Calendar quick-add (confirmed only)
+    if (r.status === 'confirmed') {
+      html += `<a class="gcal-btn" href="${buildGoogleCalUrl(r)}" target="_blank" rel="noopener">
+        <span>📅</span> Google カレンダーに追加
+      </a>`;
+    }
 
     const alts = getAlternatives(r);
     if (r.status === 'alternative' && alts.length) {
@@ -1380,7 +1521,16 @@ function initApp() {
       <div class="summary-chip alternative"><div class="num">${counts.alternative}</div><div class="lbl">${labels.alternative}</div></div>
       <div class="summary-chip confirmed"><div class="num">${counts.confirmed}</div><div class="lbl">${labels.confirmed}</div></div>
     `;
+    // Show export button if there are confirmed events
+    if (counts.confirmed > 0) {
+      $('exportBar').style.display = 'block';
+      $('exportBtnLabel').textContent = `確定済み ${counts.confirmed}件を .ics でエクスポート`;
+    } else {
+      $('exportBar').style.display = 'none';
+    }
   }
+
+  $('exportBtn').addEventListener('click', exportConfirmed);
 
   // ── Request list ──
   // Sort: actionable items first
