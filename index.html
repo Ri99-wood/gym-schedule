@@ -743,47 +743,25 @@
       right: 0;
       top: 50%;
       transform: translateY(-50%);
-      padding: 7px 13px 7px 11px;
+      padding: 7px 14px;
       font-size: 12px;
       font-weight: 700;
-      letter-spacing: 0.3px;
-      color: var(--gray-800);
-      background: var(--primary-light);
+      letter-spacing: 0.5px;
+      color: #fff;
+      background: var(--gray-700);
       border: none;
       border-radius: 999px;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: background 0.15s, transform 0.1s;
       white-space: nowrap;
       line-height: 1;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
     }
-    .today-btn::before {
-      content: '';
-      width: 6px;
-      height: 6px;
-      background: var(--primary);
-      border-radius: 50%;
-      box-shadow: 0 0 0 3px rgba(196, 145, 45, 0.22);
-    }
-    .today-btn:hover {
-      background: var(--primary);
-      color: var(--gray-800);
-    }
-    .today-btn:hover::before {
-      background: var(--gray-800);
-      box-shadow: 0 0 0 3px rgba(38, 25, 4, 0.2);
-    }
+    .today-btn:hover { background: var(--gray-800); }
+    .today-btn:active { transform: translateY(-50%) scale(0.96); }
     .today-btn:disabled {
-      opacity: 1;
-      cursor: not-allowed;
       background: var(--gray-100);
       color: var(--gray-400);
-    }
-    .today-btn:disabled::before {
-      background: var(--gray-300);
-      box-shadow: none;
+      cursor: not-allowed;
     }
 
     /* Status summary chips */
@@ -1040,8 +1018,7 @@
       .time-pill { font-size: 9px; padding: 1px 3px; }
       .month-label { font-size: 17px; min-width: 130px; }
       .month-nav { gap: 12px; padding: 0 60px; }
-      .today-btn { padding: 6px 11px 6px 9px; font-size: 11px; gap: 5px; }
-      .today-btn::before { width: 5px; height: 5px; }
+      .today-btn { padding: 6px 12px; font-size: 11px; }
       .login-card { padding: 32px 20px; }
       .modal-header { padding: 14px 16px 0; }
       .modal-body { padding: 14px 16px; }
