@@ -739,20 +739,48 @@
       right: 0;
       top: 50%;
       transform: translateY(-50%);
-      padding: 6px 12px;
+      padding: 7px 13px 7px 11px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 0.3px;
       color: var(--primary);
-      background: #fff;
-      border: 1px solid var(--gray-200);
-      border-radius: 16px;
+      background: var(--primary-light);
+      border: none;
+      border-radius: 999px;
       cursor: pointer;
       transition: all 0.15s;
       white-space: nowrap;
       line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
-    .today-btn:hover { background: var(--primary-light); border-color: var(--primary); }
-    .today-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .today-btn::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    }
+    .today-btn:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    .today-btn:hover::before {
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+    }
+    .today-btn:disabled {
+      opacity: 1;
+      cursor: not-allowed;
+      background: var(--gray-100);
+      color: var(--gray-400);
+    }
+    .today-btn:disabled::before {
+      background: var(--gray-300);
+      box-shadow: none;
+    }
 
     /* Status summary chips */
     .status-summary {
@@ -1006,7 +1034,8 @@
       .time-pill { font-size: 9px; padding: 1px 3px; }
       .month-label { font-size: 17px; min-width: 130px; }
       .month-nav { gap: 12px; padding: 0 60px; }
-      .today-btn { padding: 5px 10px; font-size: 11px; }
+      .today-btn { padding: 6px 11px 6px 9px; font-size: 11px; gap: 5px; }
+      .today-btn::before { width: 5px; height: 5px; }
       .login-card { padding: 32px 20px; }
       .modal-header { padding: 14px 16px 0; }
       .modal-body { padding: 14px 16px; }
