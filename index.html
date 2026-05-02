@@ -525,6 +525,111 @@
     .status-badge.pending { background: var(--pending-light); color: var(--pending); }
     .status-badge.confirmed { background: var(--confirmed-light); color: var(--confirmed); }
     .status-badge.alternative { background: var(--alternative-light); color: var(--alternative); }
+    .status-badge.repick { background: #fef9c3; color: #ca8a04; }
+
+    .time-pill.repick { background: #fef9c3; color: #ca8a04; }
+    .request-card.repick { border-left-color: #ca8a04; }
+
+    .repick-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: #fef9c3;
+      border-left: 3px solid #ca8a04;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    .repick-banner .repick-icon { font-size: 18px; line-height: 1; }
+    .repick-banner .repick-content { flex: 1; }
+    .repick-banner .repick-title {
+      font-weight: 700;
+      color: #854d0e;
+      margin-bottom: 3px;
+    }
+    .repick-banner .repick-message {
+      color: #713f12;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .history-line {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: var(--gray-50);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--gray-500);
+      line-height: 1.5;
+    }
+    .history-line .h-original {
+      color: var(--gray-400);
+      text-decoration: line-through;
+    }
+    .history-line .h-arrow { color: var(--gray-400); margin: 0 6px; }
+    .history-line .h-current { color: var(--confirmed); font-weight: 600; }
+
+    .btn-repick {
+      background: #fff;
+      color: #ca8a04;
+      border: 1px solid #fde68a;
+    }
+    .btn-repick:hover { background: #fef9c3; }
+
+    /* Export settings collapsible */
+    .export-settings {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      box-shadow: var(--shadow);
+    }
+    .export-settings summary {
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-500);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .export-settings summary::-webkit-details-marker { display: none; }
+    .export-settings summary::after {
+      content: '▾';
+      margin-left: auto;
+      transition: transform 0.2s;
+    }
+    .export-settings[open] summary::after { transform: rotate(180deg); }
+    .export-settings-body {
+      padding: 8px 14px 12px;
+      border-top: 1px solid var(--gray-100);
+    }
+    .setting-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .setting-row:last-child { margin-bottom: 0; }
+    .setting-row label {
+      flex: 0 0 80px;
+      font-size: 12px;
+      color: var(--gray-600);
+      font-weight: 600;
+    }
+    .setting-row input, .setting-row select {
+      flex: 1;
+      padding: 7px 10px;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+    }
+    .setting-row input:focus, .setting-row select:focus { border-color: var(--primary); }
     .alt-info {
       background: var(--alternative-light);
       border-radius: 8px;
@@ -1018,6 +1123,29 @@
     <div class="status-summary" id="statusSummary"></div>
 
     <div class="export-bar" id="exportBar" style="display:none;">
+      <details class="export-settings">
+        <summary>⚙️ エクスポート設定（題名・リマインダー）</summary>
+        <div class="export-settings-body">
+          <div class="setting-row">
+            <label>題名</label>
+            <input type="text" id="setTitle" maxlength="50" placeholder="パーソナルトレーニング">
+          </div>
+          <div class="setting-row">
+            <label>リマインダー</label>
+            <select id="setReminder">
+              <option value="0">なし</option>
+              <option value="5">5分前</option>
+              <option value="10">10分前</option>
+              <option value="15" selected>15分前</option>
+              <option value="30">30分前</option>
+              <option value="60">1時間前</option>
+              <option value="120">2時間前</option>
+              <option value="1440">1日前</option>
+            </select>
+          </div>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:6px;">※ 題名とリマインダーは .ics エクスポート時に反映されます。Googleカレンダーリンクは題名のみ反映。</div>
+        </div>
+      </details>
       <button class="export-btn" id="exportBtn">
         <span class="ico">📅</span>
         <span id="exportBtnLabel">確定済みをエクスポート</span>
@@ -1044,6 +1172,23 @@
     </div>
     <div class="modal-body" id="detailBody"></div>
     <div class="modal-footer" id="detailFooter"></div>
+  </div>
+</div>
+
+<!-- Prompt dialog (for trainer message input etc.) -->
+<div class="modal-overlay" id="promptDialog">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <h3 id="promptTitle">メッセージ</h3>
+    </div>
+    <div class="modal-body">
+      <p id="promptMsg" style="font-size:13px;color:var(--gray-500);margin-bottom:12px;line-height:1.5;"></p>
+      <textarea id="promptInput" rows="3" style="width:100%;padding:10px 12px;border:2px solid var(--gray-200);border-radius:8px;font-family:inherit;font-size:14px;outline:none;resize:vertical;"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" id="promptCancel">キャンセル</button>
+      <button class="btn btn-primary" id="promptOk">送信</button>
+    </div>
   </div>
 </div>
 
@@ -1193,19 +1338,32 @@ function initApp() {
   function icsEscape(s) {
     return String(s || '').replace(/\\/g, '\\\\').replace(/,/g, '\\,').replace(/;/g, '\\;').replace(/\r?\n/g, '\\n');
   }
-  function buildGoogleCalUrl(r, title = 'パーソナルトレーニング') {
+  // Export settings (persisted in localStorage)
+  const SETTINGS_KEY = 'gym_export_settings_v1';
+  const exportSettings = { title: 'パーソナルトレーニング', reminderMinutes: 15 };
+  try {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+    if (saved && typeof saved === 'object') Object.assign(exportSettings, saved);
+  } catch {}
+  function saveExportSettings() {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(exportSettings)); } catch {}
+  }
+
+  function buildGoogleCalUrl(r) {
     const start = fmtICSTime(r.date, r.timeStart);
     const end = fmtICSTime(r.date, r.timeEnd);
     const params = new URLSearchParams({
       action: 'TEMPLATE',
-      text: title,
+      text: exportSettings.title || 'パーソナルトレーニング',
       dates: `${start}/${end}`,
       details: 'パーソナルトレーニング予約（gym-schedule で確定）',
       ctz: 'Asia/Tokyo'
     });
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
   }
-  function buildICS(events, title = 'パーソナルトレーニング') {
+  function buildICS(events) {
+    const title = exportSettings.title || 'パーソナルトレーニング';
+    const reminder = parseInt(exportSettings.reminderMinutes, 10) || 0;
     const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     const lines = [
       'BEGIN:VCALENDAR',
@@ -1231,9 +1389,18 @@ function initApp() {
         `DTSTART;TZID=Asia/Tokyo:${fmtICSTime(r.date, r.timeStart)}`,
         `DTEND;TZID=Asia/Tokyo:${fmtICSTime(r.date, r.timeEnd)}`,
         `SUMMARY:${icsEscape(title)}`,
-        `DESCRIPTION:${icsEscape('パーソナルトレーニング予約')}`,
-        'END:VEVENT'
+        `DESCRIPTION:${icsEscape('パーソナルトレーニング予約')}`
       );
+      if (reminder > 0) {
+        lines.push(
+          'BEGIN:VALARM',
+          `TRIGGER:-PT${reminder}M`,
+          'ACTION:DISPLAY',
+          `DESCRIPTION:${icsEscape(title)}`,
+          'END:VALARM'
+        );
+      }
+      lines.push('END:VEVENT');
     });
     lines.push('END:VCALENDAR');
     return lines.join('\r\n');
@@ -1259,6 +1426,23 @@ function initApp() {
     const ics = buildICS(confirmed);
     downloadFile(ics, `gym-schedule-${ym}.ics`);
     showToast(`${confirmed.length}件をエクスポートしました`);
+  }
+
+  // History helper: shows when current date/time differs from original request
+  function hasHistoryChange(r) {
+    if (!r.originalDate) return false;
+    return r.originalDate !== r.date
+      || r.originalTimeStart !== r.timeStart
+      || r.originalTimeEnd !== r.timeEnd;
+  }
+  function renderHistoryHTML(r) {
+    if (!hasHistoryChange(r)) return '';
+    return `<div class="history-line">
+      <span style="color:var(--gray-400);">📋 元の希望:</span>
+      <span class="h-original">${formatDate(r.originalDate)} ${r.originalTimeStart}〜${r.originalTimeEnd}</span>
+      <span class="h-arrow">→</span>
+      <span class="h-current">${formatDate(r.date)} ${r.timeStart}〜${r.timeEnd}</span>
+    </div>`;
   }
   function formatDate(s) {
     if (!s) return '';
@@ -1370,12 +1554,14 @@ function initApp() {
   // ── Detail modal ──
   let openDetailId = null;
   let detailEditMode = false;
+  let detailRepickFlow = false; // when true, save will also flip status back to 'pending'
 
   function openDetailModal(id) {
     const r = requests.find(x => x.id === id);
     if (!r) return;
     openDetailId = id;
     detailEditMode = false;
+    detailRepickFlow = false;
     renderDetailModal();
     openModal('detailModal');
   }
@@ -1384,6 +1570,7 @@ function initApp() {
     closeModal('detailModal');
     openDetailId = null;
     detailEditMode = false;
+    detailRepickFlow = false;
   }
 
   $('detailModalClose').addEventListener('click', closeDetailModal);
@@ -1398,11 +1585,22 @@ function initApp() {
 
     const body = $('detailBody');
     const footer = $('detailFooter');
-    const labels = { pending: '未確定', confirmed: '確定', alternative: '代替提案中' };
+    const labels = { pending: '未確定', confirmed: '確定', alternative: '代替提案中', repick: '再選択依頼' };
 
-    // Edit mode (client + pending only)
-    if (detailEditMode && currentRole === 'client' && r.status === 'pending') {
+    // Edit mode (client only, for pending or repick status)
+    const isEditable = currentRole === 'client' && (r.status === 'pending' || r.status === 'repick');
+    if (detailEditMode && isEditable) {
+      const heading = detailRepickFlow || r.status === 'repick' ? '日時を選び直す' : '時間を変更';
       body.innerHTML = `
+        <div style="text-align:center;font-size:15px;font-weight:700;margin-bottom:14px;color:var(--gray-700);">${heading}</div>
+        ${r.status === 'repick' && r.trainerMessage ? `
+          <div class="repick-banner" style="margin-bottom:16px;margin-top:0;">
+            <div class="repick-icon">💬</div>
+            <div class="repick-content">
+              <div class="repick-title">トレーナーからのメッセージ</div>
+              <div class="repick-message">${r.trainerMessage.replace(/[<>]/g, '')}</div>
+            </div>
+          </div>` : ''}
         <div class="form-group">
           <label>日付</label>
           <input type="date" id="editDate" value="${r.date}">
@@ -1427,6 +1625,20 @@ function initApp() {
         <span class="status-badge ${r.status}">${labels[r.status] || r.status}</span>
       </div>
     `;
+
+    // History (original → current)
+    html += renderHistoryHTML(r);
+
+    // Repick banner with trainer message
+    if (r.status === 'repick') {
+      html += `<div class="repick-banner">
+        <div class="repick-icon">🔁</div>
+        <div class="repick-content">
+          <div class="repick-title">${currentRole === 'client' ? 'トレーナーから日時の再選択を依頼されています' : 'クライアントの再選択を待っています'}</div>
+          ${r.trainerMessage ? `<div class="repick-message">${r.trainerMessage.replace(/[<>]/g, '')}</div>` : ''}
+        </div>
+      </div>`;
+    }
 
     // Google Calendar quick-add (confirmed only)
     if (r.status === 'confirmed') {
@@ -1467,15 +1679,20 @@ function initApp() {
         footerHtml += `<button class="btn btn-primary" data-detail-action="edit">時間を変更</button>`;
       } else if (r.status === 'alternative') {
         footerHtml += `<button class="btn btn-reject" data-action="reject" data-id="${r.id}">すべて辞退</button>`;
+      } else if (r.status === 'repick') {
+        footerHtml += `<button class="btn btn-primary" data-detail-action="editRepick">日時を選び直す</button>`;
       } else if (r.status === 'confirmed') {
         footerHtml += `<button class="btn btn-delete" data-action="delete" data-id="${r.id}">予約を取り消し</button>`;
       }
     } else {
       if (r.status === 'pending') {
+        footerHtml += `<button class="btn btn-repick" data-action="repick" data-id="${r.id}">再選択を依頼</button>`;
         footerHtml += `<button class="btn btn-alt" data-action="openAlt" data-id="${r.id}">代替を提案</button>`;
         footerHtml += `<button class="btn btn-confirm" data-action="confirm" data-id="${r.id}">確定する</button>`;
       } else if (r.status === 'alternative') {
         footerHtml += `<button class="btn btn-alt" data-action="openAlt" data-id="${r.id}">提案を編集</button>`;
+      } else if (r.status === 'repick') {
+        footerHtml += `<button class="btn btn-cancel" data-action="cancelRepick" data-id="${r.id}">依頼を取り消す</button>`;
       } else if (r.status === 'confirmed') {
         footerHtml += `<button class="btn btn-delete" data-action="delete" data-id="${r.id}">予約を取り消し</button>`;
       }
@@ -1491,8 +1708,9 @@ function initApp() {
     const id = btn.dataset.id;
 
     if (action === 'close') { closeDetailModal(); return; }
-    if (action === 'edit') { detailEditMode = true; renderDetailModal(); return; }
-    if (action === 'cancelEdit') { detailEditMode = false; renderDetailModal(); return; }
+    if (action === 'edit') { detailEditMode = true; detailRepickFlow = false; renderDetailModal(); return; }
+    if (action === 'editRepick') { detailEditMode = true; detailRepickFlow = true; renderDetailModal(); return; }
+    if (action === 'cancelEdit') { detailEditMode = false; detailRepickFlow = false; renderDetailModal(); return; }
     if (action === 'saveEdit') {
       const date = $('editDate').value;
       const ts = $('editTimeStart').value;
@@ -1500,14 +1718,21 @@ function initApp() {
       btn.disabled = true;
       showSync();
       try {
-        await updateDoc(doc(db, 'requests', id), {
+        const r = requests.find(x => x.id === id);
+        const isRepickResponse = detailRepickFlow || (r && r.status === 'repick');
+        const update = {
           date, yearMonth: date.substring(0, 7),
           timeStart: ts, timeEnd: addHour(ts),
           updatedAt: serverTimestamp()
-        });
-        showToast('変更しました');
+        };
+        if (isRepickResponse) {
+          update.status = 'pending';
+          update.trainerMessage = '';
+        }
+        await updateDoc(doc(db, 'requests', id), update);
+        showToast(isRepickResponse ? '再提案しました' : '変更しました');
         detailEditMode = false;
-        // Re-render will happen via Firestore listener; close modal for clarity
+        detailRepickFlow = false;
         closeDetailModal();
       } catch {
         showToast('変更に失敗しました');
@@ -1536,6 +1761,29 @@ function initApp() {
     $('addTimeEndText').textContent = '11:00';
     openModal('addModal');
   });
+
+  // ── Custom prompt dialog ──
+  function customPrompt({ title, message, placeholder = '', okText = '送信', cancelText = 'キャンセル', defaultValue = '' }) {
+    return new Promise(resolve => {
+      $('promptTitle').textContent = title;
+      $('promptMsg').textContent = message || '';
+      $('promptMsg').style.display = message ? 'block' : 'none';
+      $('promptInput').value = defaultValue;
+      $('promptInput').placeholder = placeholder;
+      $('promptOk').textContent = okText;
+      $('promptCancel').textContent = cancelText;
+      openModal('promptDialog');
+      setTimeout(() => $('promptInput').focus(), 100);
+      const cleanup = (val) => {
+        closeModal('promptDialog');
+        $('promptOk').onclick = null;
+        $('promptCancel').onclick = null;
+        resolve(val);
+      };
+      $('promptOk').onclick = () => cleanup($('promptInput').value);
+      $('promptCancel').onclick = () => cleanup(null);
+    });
+  }
 
   // ── Custom confirm dialog ──
   function customConfirm({ title, message, okText = 'OK', cancelText = 'キャンセル', danger = false, icon = '⚠️' }) {
@@ -1630,7 +1878,10 @@ function initApp() {
           pill.className = 'time-pill ' + r.status;
           pill.dataset.id = r.id;
           pill.title = `${r.timeStart}〜${r.timeEnd}（タップで詳細）`;
-          const icon = r.status === 'confirmed' ? '✓ ' : r.status === 'alternative' ? '⇄ ' : '';
+          const icon = r.status === 'confirmed' ? '✓ '
+            : r.status === 'alternative' ? '⇄ '
+            : r.status === 'repick' ? '🔁 '
+            : '';
           pill.textContent = icon + r.timeStart;
           pill.addEventListener('click', e => {
             e.stopPropagation();
@@ -1674,18 +1925,19 @@ function initApp() {
 
   // ── Status summary ──
   function renderSummary() {
-    const counts = { pending: 0, alternative: 0, confirmed: 0 };
+    const counts = { pending: 0, alternative: 0, repick: 0, confirmed: 0 };
     requests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+    // alternative + repick share the "返答待ち / 提案あり" chip
+    const altSum = counts.alternative + counts.repick;
     const labels = currentRole === 'trainer'
-      ? { pending: '要対応', alternative: '返答待ち', confirmed: '確定' }
-      : { pending: '未確定', alternative: '提案あり', confirmed: '確定' };
+      ? { pending: '要対応', alt: '返答待ち', confirmed: '確定' }
+      : { pending: '未確定', alt: '要返答', confirmed: '確定' };
     const wrap = $('statusSummary');
     wrap.innerHTML = `
       <div class="summary-chip pending"><div class="num">${counts.pending}</div><div class="lbl">${labels.pending}</div></div>
-      <div class="summary-chip alternative"><div class="num">${counts.alternative}</div><div class="lbl">${labels.alternative}</div></div>
+      <div class="summary-chip alternative"><div class="num">${altSum}</div><div class="lbl">${labels.alt}</div></div>
       <div class="summary-chip confirmed"><div class="num">${counts.confirmed}</div><div class="lbl">${labels.confirmed}</div></div>
     `;
-    // Show export button if there are confirmed events
     if (counts.confirmed > 0) {
       $('exportBar').style.display = 'block';
       $('exportBtnLabel').textContent = `確定済み ${counts.confirmed}件を .ics でエクスポート`;
@@ -1695,13 +1947,24 @@ function initApp() {
   }
 
   $('exportBtn').addEventListener('click', exportConfirmed);
+  // Init export settings UI
+  $('setTitle').value = exportSettings.title;
+  $('setReminder').value = String(exportSettings.reminderMinutes);
+  $('setTitle').addEventListener('input', () => {
+    exportSettings.title = $('setTitle').value || 'パーソナルトレーニング';
+    saveExportSettings();
+  });
+  $('setReminder').addEventListener('change', () => {
+    exportSettings.reminderMinutes = parseInt($('setReminder').value, 10) || 0;
+    saveExportSettings();
+  });
 
   // ── Request list ──
   // Sort: actionable items first
   function sortForRole(arr) {
     const order = currentRole === 'trainer'
-      ? { pending: 0, alternative: 1, confirmed: 2 }      // trainer: pending needs action
-      : { alternative: 0, pending: 1, confirmed: 2 };      // client: alternative needs response
+      ? { pending: 0, alternative: 1, repick: 1, confirmed: 2 }
+      : { alternative: 0, repick: 0, pending: 1, confirmed: 2 };
     return [...arr].sort((a, b) => {
       const so = (order[a.status] ?? 9) - (order[b.status] ?? 9);
       if (so) return so;
@@ -1728,7 +1991,7 @@ function initApp() {
       card.className = 'request-card ' + r.status;
       card.dataset.id = r.id;
 
-      const labels = { pending: '未確定', confirmed: '確定', alternative: '代替提案' };
+      const labels = { pending: '未確定', confirmed: '確定', alternative: '代替提案', repick: '再選択依頼' };
       let html = `
         <div class="request-top">
           <div>
@@ -1737,6 +2000,20 @@ function initApp() {
           </div>
           <span class="status-badge ${r.status}">${labels[r.status] || r.status}</span>
         </div>`;
+
+      // History (original → current)
+      html += renderHistoryHTML(r);
+
+      // Repick banner with trainer message
+      if (r.status === 'repick') {
+        html += `<div class="repick-banner">
+          <div class="repick-icon">🔁</div>
+          <div class="repick-content">
+            <div class="repick-title">${currentRole === 'client' ? 'トレーナーから日時の再選択を依頼されています' : 'クライアントの再選択を待っています'}</div>
+            ${r.trainerMessage ? `<div class="repick-message">${r.trainerMessage.replace(/[<>]/g, '')}</div>` : ''}
+          </div>
+        </div>`;
+      }
 
       const alts = getAlternatives(r);
       if (r.status === 'alternative' && alts.length) {
@@ -1767,15 +2044,20 @@ function initApp() {
           html += `<button class="btn btn-reject" data-action="reject" data-id="${r.id}">すべて辞退</button>`;
         } else if (r.status === 'pending') {
           html += `<button class="btn btn-delete" data-action="delete" data-id="${r.id}">取り消し</button>`;
+        } else if (r.status === 'repick') {
+          html += `<button class="btn btn-primary" data-action="repickEdit" data-id="${r.id}">日時を選び直す</button>`;
         } else if (r.status === 'confirmed') {
           html += `<span style="font-size:13px;color:var(--confirmed);">✓ 確定しました</span>`;
         }
       } else {
         if (r.status === 'pending') {
           html += `<button class="btn btn-confirm" data-action="confirm" data-id="${r.id}">確定する</button>
-                   <button class="btn btn-alt" data-action="openAlt" data-id="${r.id}">代替を提案</button>`;
+                   <button class="btn btn-alt" data-action="openAlt" data-id="${r.id}">代替を提案</button>
+                   <button class="btn btn-repick" data-action="repick" data-id="${r.id}">再選択を依頼</button>`;
         } else if (r.status === 'alternative') {
           html += `<button class="btn btn-alt" data-action="openAlt" data-id="${r.id}">提案を編集</button>`;
+        } else if (r.status === 'repick') {
+          html += `<button class="btn btn-cancel" data-action="cancelRepick" data-id="${r.id}">依頼を取り消す</button>`;
         } else if (r.status === 'confirmed') {
           html += `<span style="font-size:13px;color:var(--confirmed);">✓ 確定済み</span>`;
         }
@@ -1794,8 +2076,19 @@ function initApp() {
     const altIndex = btn.dataset.altIndex !== undefined ? parseInt(btn.dataset.altIndex, 10) : null;
     const r = requests.find(x => x.id === id);
 
-    // Sync action - opens modal
+    // Sync actions - open modals
     if (action === 'openAlt') { openAltModal(id); return; }
+    if (action === 'repickEdit') {
+      // Client re-picks a date/time after trainer requested re-selection
+      // Reuse detail modal in edit mode
+      openDetailId = id;
+      detailEditMode = true;
+      // Mark this edit as a repick response (so save also flips status back to pending)
+      detailRepickFlow = true;
+      renderDetailModal();
+      openModal('detailModal');
+      return;
+    }
 
     btn.disabled = true;
     showSync();
@@ -1859,6 +2152,32 @@ function initApp() {
         await deleteDoc(doc(db, 'requests', id));
         showToast('取り消しました');
       }
+      else if (action === 'repick') {
+        hideSync();
+        const message = await customPrompt({
+          title: '日時の再選択を依頼',
+          message: 'クライアントに日時を選び直してもらいます。理由などのメッセージを記入できます（任意）。',
+          placeholder: '例：その日は対応できません。別の日時でお願いします。',
+          okText: '依頼を送信'
+        });
+        if (message === null) { btn.disabled = false; return; }
+        showSync();
+        await updateDoc(doc(db, 'requests', id), {
+          status: 'repick',
+          trainerMessage: (message || '').trim(),
+          alternatives: [],
+          updatedAt: serverTimestamp()
+        });
+        showToast('再選択を依頼しました');
+      }
+      else if (action === 'cancelRepick') {
+        await updateDoc(doc(db, 'requests', id), {
+          status: 'pending',
+          trainerMessage: '',
+          updatedAt: serverTimestamp()
+        });
+        showToast('依頼を取り消しました');
+      }
     } catch (err) {
       console.error(err);
       showToast('操作に失敗しました');
@@ -1897,7 +2216,11 @@ function initApp() {
       await addDoc(collection(db, 'requests'), {
         date, yearMonth: date.substring(0, 7),
         timeStart: ts, timeEnd: te,
+        // Track original request to show change history
+        originalDate: date, originalTimeStart: ts, originalTimeEnd: te,
         status: 'pending',
+        alternatives: [],
+        trainerMessage: '',
         altDate: '', altTimeStart: '', altTimeEnd: '', trainerNote: '',
         createdAt: serverTimestamp(), updatedAt: serverTimestamp()
       });
@@ -2012,6 +2335,7 @@ function initApp() {
       await updateDoc(doc(db, 'requests', pendingAltId), {
         status: 'alternative',
         alternatives,
+        trainerMessage: '',
         altDate: '', altTimeStart: '', altTimeEnd: '', trainerNote: '',
         updatedAt: serverTimestamp()
       });
