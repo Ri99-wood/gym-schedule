@@ -393,9 +393,10 @@
     }
     .alt-quick-date input[type=date] {
       position: absolute;
-      inset: 0;
-      width: 100%; height: 100%;
-      opacity: 0; cursor: pointer;
+      left: 50%;
+      bottom: 0;
+      width: 1px; height: 1px;
+      opacity: 0; pointer-events: none;
       padding: 0; border: none; font-size: 16px;
     }
 
@@ -912,11 +913,12 @@
     }
     .quick-date-picker input[type="date"] {
       position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
+      left: 50%;
+      bottom: 0;
+      width: 1px;
+      height: 1px;
       opacity: 0;
-      cursor: pointer;
+      pointer-events: none;
       padding: 0;
       border: none;
       font-size: 16px;
@@ -1340,6 +1342,18 @@ function initApp() {
     }[c]));
   }
 
+  // Open a (visually hidden) date input's native picker when wrapper is tapped.
+  // iOS Safari requires explicit invocation; opacity-overlay trick alone often fails.
+  function bindDatePicker(wrapper, input) {
+    if (!wrapper || !input) return;
+    wrapper.addEventListener('click', () => {
+      try {
+        if (typeof input.showPicker === 'function') input.showPicker();
+        else { input.focus(); input.click(); }
+      } catch { input.focus(); }
+    });
+  }
+
   let currentRole = null;
   let currentYear, currentMonth;
   let requests = [];
@@ -1686,6 +1700,8 @@ function initApp() {
       const updT = () => { tTxt.textContent = addHour(tEl.value) || '--:--'; };
       tEl.addEventListener('input', updT);
       tEl.addEventListener('change', updT);
+      // iOS-safe date picker trigger
+      bindDatePicker(body.querySelector('.quick-date-picker'), dEl);
       return;
     }
 
@@ -2271,6 +2287,8 @@ function initApp() {
   $('addDate').addEventListener('input', () => {
     $('addDateText').textContent = formatFullDate($('addDate').value);
   });
+  // Make the add-date wrapper open native picker on tap (iOS Safari fix)
+  bindDatePicker(document.querySelector('#addModal .quick-date-picker'), $('addDate'));
   function updateAddEndPreview() {
     $('addTimeEndText').textContent = addHour($('addTimeStart').value) || '--:--';
   }
@@ -2339,6 +2357,8 @@ function initApp() {
     };
     dateInput.addEventListener('change', updateDateText);
     dateInput.addEventListener('input', updateDateText);
+    // iOS-safe date picker trigger
+    bindDatePicker(row.querySelector('.alt-quick-date'), dateInput);
 
     // Live update end time
     const tsInput = row.querySelector('.alt-ts-input');
