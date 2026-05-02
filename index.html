@@ -6,28 +6,31 @@
   <title>トレーニング予約調整</title>
   <style>
     :root {
-      --primary: #2563eb;
-      --primary-light: #dbeafe;
-      --confirmed: #16a34a;
-      --confirmed-light: #dcfce7;
-      --alternative: #d97706;
-      --alternative-light: #fef3c7;
-      --pending: #6366f1;
-      --pending-light: #e0e7ff;
-      --danger: #dc2626;
-      --gray-50: #f9fafb;
-      --gray-100: #f3f4f6;
-      --gray-200: #e5e7eb;
-      --gray-300: #d1d5db;
-      --gray-400: #9ca3af;
-      --gray-500: #6b7280;
-      --gray-600: #4b5563;
-      --gray-700: #374151;
-      --gray-800: #1f2937;
-      --gray-900: #111827;
+      /* Brand-aligned palette (Stay Fit: gold #edaf3e / brown #362506 / green #306e47) */
+      --primary: #c4912d;          /* Brand gold (darkened for AA contrast) */
+      --primary-light: #fdf2d6;
+      --primary-bright: #edaf3e;   /* Full brand gold for accents */
+      --confirmed: #306e47;        /* Brand green */
+      --confirmed-light: #dceadc;
+      --alternative: #c2691b;      /* Burnt orange — harmonizes with gold */
+      --alternative-light: #fbe5d0;
+      --pending: #6b5d35;          /* Warm olive — distinct yet warm */
+      --pending-light: #ede7d0;
+      --danger: #c2410c;           /* Warm vermillion */
+      /* Slightly warm grays */
+      --gray-50: #faf7f0;
+      --gray-100: #f3eee2;
+      --gray-200: #e6dfcc;
+      --gray-300: #cfc6ad;
+      --gray-400: #9c9173;
+      --gray-500: #6b6450;
+      --gray-600: #4a4334;
+      --gray-700: #362506;         /* Brand dark brown for text emphasis */
+      --gray-800: #261904;
+      --gray-900: #191101;
       --radius: 12px;
-      --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+      --shadow: 0 1px 3px rgba(54,37,6,0.08), 0 1px 2px rgba(54,37,6,0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(54,37,6,0.1), 0 4px 6px -2px rgba(54,37,6,0.05);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -45,7 +48,7 @@
       justify-content: center;
       min-height: 100vh;
       padding: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #edaf3e 0%, #362506 100%);
     }
     .setup-screen.show { display: flex; }
     .setup-card {
@@ -154,17 +157,17 @@
       width: 100%;
       padding: 14px;
       background: var(--primary);
-      color: #fff;
+      color: var(--gray-800);
       border: none;
       border-radius: 8px;
       font-size: 16px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      transition: opacity 0.2s;
+      transition: background 0.15s;
       display: none;
     }
     .login-btn.show { display: block; }
-    .login-btn:hover { opacity: 0.9; }
+    .login-btn:hover { background: var(--primary-bright); }
     .login-error { color: var(--danger); font-size: 13px; margin-top: 12px; display: none; }
 
     /* App */
@@ -193,7 +196,7 @@
       padding: 3px 10px;
       border-radius: 20px;
     }
-    .role-badge.client { background: var(--primary-light); color: var(--primary); }
+    .role-badge.client { background: var(--primary-light); color: var(--gray-800); }
     .role-badge.trainer { background: var(--confirmed-light); color: var(--confirmed); }
     .sync-indicator {
       font-size: 11px;
@@ -525,17 +528,17 @@
     .status-badge.pending { background: var(--pending-light); color: var(--pending); }
     .status-badge.confirmed { background: var(--confirmed-light); color: var(--confirmed); }
     .status-badge.alternative { background: var(--alternative-light); color: var(--alternative); }
-    .status-badge.repick { background: #fef9c3; color: #ca8a04; }
+    .status-badge.repick { background: #fbe5d0; color: #92400e; }
 
-    .time-pill.repick { background: #fef9c3; color: #ca8a04; }
-    .request-card.repick { border-left-color: #ca8a04; }
+    .time-pill.repick { background: #fbe5d0; color: #92400e; }
+    .request-card.repick { border-left-color: #92400e; }
 
     .repick-banner {
       display: flex;
       align-items: flex-start;
       gap: 10px;
-      background: #fef9c3;
-      border-left: 3px solid #ca8a04;
+      background: #fbe5d0;
+      border-left: 3px solid #92400e;
       border-radius: 8px;
       padding: 10px 12px;
       margin-top: 10px;
@@ -545,11 +548,11 @@
     .repick-banner .repick-content { flex: 1; }
     .repick-banner .repick-title {
       font-weight: 700;
-      color: #854d0e;
+      color: #7c2d12;
       margin-bottom: 3px;
     }
     .repick-banner .repick-message {
-      color: #713f12;
+      color: #5b220e;
       white-space: pre-wrap;
       word-break: break-word;
     }
@@ -572,10 +575,10 @@
 
     .btn-repick {
       background: #fff;
-      color: #ca8a04;
-      border: 1px solid #fde68a;
+      color: #92400e;
+      border: 1px solid #fbcfa3;
     }
-    .btn-repick:hover { background: #fef9c3; }
+    .btn-repick:hover { background: #fbe5d0; }
 
     /* Export settings collapsible */
     .export-settings {
@@ -658,7 +661,8 @@
     .btn-accept { background: var(--confirmed); color: #fff; }
     .btn-reject { background: var(--gray-200); color: var(--gray-600); }
     .btn-delete { background: var(--gray-100); color: var(--danger); }
-    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary { background: var(--primary); color: var(--gray-800); }
+    .btn-primary:hover { background: var(--primary-bright); }
     .btn-cancel { background: var(--gray-100); color: var(--gray-600); }
     .empty-state { text-align: center; padding: 40px 20px; color: var(--gray-400); font-size: 14px; }
 
@@ -743,7 +747,7 @@
       font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.3px;
-      color: var(--primary);
+      color: var(--gray-800);
       background: var(--primary-light);
       border: none;
       border-radius: 999px;
@@ -761,15 +765,15 @@
       height: 6px;
       background: var(--primary);
       border-radius: 50%;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+      box-shadow: 0 0 0 3px rgba(196, 145, 45, 0.22);
     }
     .today-btn:hover {
       background: var(--primary);
-      color: #fff;
+      color: var(--gray-800);
     }
     .today-btn:hover::before {
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+      background: var(--gray-800);
+      box-shadow: 0 0 0 3px rgba(38, 25, 4, 0.2);
     }
     .today-btn:disabled {
       opacity: 1;
@@ -809,7 +813,7 @@
       margin-top: 4px;
       font-weight: 600;
     }
-    .summary-chip.pending .num { color: var(--pending); }
+    .summary-chip.pending .num { color: var(--gray-700); }
     .summary-chip.alternative .num { color: var(--alternative); }
     .summary-chip.confirmed .num { color: var(--confirmed); }
 
@@ -822,17 +826,19 @@
       height: 56px;
       border-radius: 50%;
       background: var(--primary);
-      color: #fff;
+      color: var(--gray-800);
       border: none;
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+      box-shadow: 0 6px 16px rgba(196, 145, 45, 0.45);
       font-size: 28px;
+      font-weight: 700;
       cursor: pointer;
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 90;
-      transition: transform 0.15s;
+      transition: transform 0.15s, background 0.15s;
     }
+    .fab:hover { background: var(--primary-bright); }
     .fab.show { display: flex; }
     .fab:hover { transform: scale(1.05); }
     .fab:active { transform: scale(0.95); }
