@@ -1614,19 +1614,32 @@ function initApp() {
               <div class="repick-message">${r.trainerMessage.replace(/[<>]/g, '')}</div>
             </div>
           </div>` : ''}
-        <div class="form-group">
-          <label>日付</label>
+        <div class="quick-date-picker">
+          <div class="date-text" id="editDateText">${formatFullDate(r.date)}</div>
+          <div class="date-hint">タップして日付を変更</div>
           <input type="date" id="editDate" value="${r.date}">
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom:0;">
           <label>開始時刻 <span style="color:var(--gray-400);font-weight:400;">(1コマ60分)</span></label>
-          <input type="time" id="editTimeStart" value="${r.timeStart}">
+          <div class="time-selector">
+            <input type="time" id="editTimeStart" value="${r.timeStart}">
+            <div class="time-end-preview">終了 <strong id="editTimeEndText">${addHour(r.timeStart)}</strong></div>
+          </div>
         </div>
       `;
       footer.innerHTML = `
         <button class="btn btn-cancel" data-detail-action="cancelEdit">キャンセル</button>
         <button class="btn btn-primary" data-detail-action="saveEdit" data-id="${r.id}">保存</button>
       `;
+      // Live updates
+      const dEl = $('editDate'), dTxt = $('editDateText');
+      const updD = () => { dTxt.textContent = formatFullDate(dEl.value); };
+      dEl.addEventListener('input', updD);
+      dEl.addEventListener('change', updD);
+      const tEl = $('editTimeStart'), tTxt = $('editTimeEndText');
+      const updT = () => { tTxt.textContent = addHour(tEl.value) || '--:--'; };
+      tEl.addEventListener('input', updT);
+      tEl.addEventListener('change', updT);
       return;
     }
 
