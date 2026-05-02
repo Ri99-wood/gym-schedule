@@ -78,3 +78,67 @@ git push
 - **リアルタイム同期** — トレーナーが操作するとクライアント画面に即反映
 - **無料** — Firebase 無料枠で十分運用可能
 - **スマホ対応** — モバイルファーストのレスポンシブ UI
+
+---
+
+## 🔒 セキュリティ設定（必須）
+
+公開後、以下を **必ず** 設定してください。設定しないとデータが第三者から読み書き・削除される可能性があります。
+
+### A. Firestore セキュリティルール
+
+1. [Firebase Console](https://console.firebase.google.com/) → プロジェクト → **Firestore Database** → **ルール** タブ
+2. 内容を以下に書き換えて **「公開」**：
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /requests/{doc} {
+      // 匿名認証済みユーザーのみ許可
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
+
+アプリ起動時に Firebase Anonymous Auth で自動サインインするため、正規ユーザーは影響なし。  
+直接 REST API で叩く外部攻撃をブロックします。
+
+### B. Firebase で匿名認証を有効化
+
+1. Firebase Console → 左メニュー **「Authentication」** → **「始める」**
+2. **「Sign-in method」** タブ → **「匿名」** を有効化 → 保存
+
+### C. API キーのドメイン制限
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → 該当プロジェクトを選択
+2. **「APIとサービス」** → **「認証情報」**
+3. ブラウザ用 API キーをクリック
+4. **「アプリケーションの制限」** → **「ウェブサイト」** を選択
+5. **「ウェブサイトの制限を追加」** で以下を追加：
+   - `https://あなたのGitHubユーザー名.github.io/*`
+   - 例: `https://ri99-wood.github.io/*`
+6. 保存
+
+### D. PIN を変更
+
+`index.html` 内の以下を必ずデフォルトから変更してください：
+
+```js
+const PINS = { client: '1234', trainer: '5678' };
+```
+
+⚠️ PIN は JS に直書きされているため DevTools で見られます。あくまで **UI 上の利便性のための仕切り** であり、セキュリティの本質は上記 A〜C です。
+
+### E. その他の対策（推奨）
+
+- **Firebase App Check** を有効化（reCAPTCHA v3）すると、正規アプリ以外からのリクエストをブロックできます
+- 真の本人認証が必要なら **メール/パスワード認証**（Firebase Auth）に切り替えを検討
+
+---
+
+## ⚠️ XSS対策について
+
+すべてのユーザー入力（メモ・トレーナーメッセージ）は HTML エンティティエスケープしています。  
+`<script>` などを入力されても実行されません。

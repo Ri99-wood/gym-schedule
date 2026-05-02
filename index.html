@@ -1291,6 +1291,8 @@ import {
   getFirestore, collection, query, where,
   onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, signInAnonymously, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 // ══════════════════════════════════════════════
 //  Firebase 設定（ここを書き換えてください）
@@ -1321,6 +1323,22 @@ if (!IS_CONFIGURED) {
 function initApp() {
   const firebaseApp = initializeApp(FIREBASE_CONFIG);
   const db = getFirestore(firebaseApp);
+  const auth = getAuth(firebaseApp);
+
+  // ── Security: Anonymous Auth ──
+  // Firestore rules can require request.auth != null to block unauthenticated access.
+  // Without this, anyone with the public Firebase config could read/write data via REST API.
+  const authPromise = signInAnonymously(auth).catch(err => {
+    console.error('Anonymous auth failed:', err);
+    throw err;
+  });
+
+  // ── XSS protection: escape user-provided text before HTML interpolation ──
+  function escHTML(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
 
   let currentRole = null;
   let currentYear, currentMonth;
@@ -1519,10 +1537,23 @@ function initApp() {
     $('pinInput').focus();
   }
 
-  function doLogin() {
+  async function doLogin() {
     if (!selectedRole) return;
     const pin = $('pinInput').value;
     if (!pin) { $('pinInput').focus(); return; }
+
+    $('loginBtn').disabled = true;
+    $('loginError').style.display = 'none';
+    try {
+      // Block until anonymous auth is ready (required by Firestore rules)
+      await authPromise;
+    } catch (err) {
+      $('loginError').textContent = 'サーバー接続に失敗しました。通信状況を確認してください。';
+      $('loginError').style.display = 'block';
+      $('loginBtn').disabled = false;
+      return;
+    }
+
     if (String(PINS[selectedRole]) === String(pin)) {
       currentRole = selectedRole;
       $('loginScreen').classList.remove('show');
@@ -1535,8 +1566,10 @@ function initApp() {
       else $('fabBtn').classList.remove('show');
       subscribeToMonth();
     } else {
+      $('loginError').textContent = 'PINが正しくありません';
       $('loginError').style.display = 'block';
     }
+    $('loginBtn').disabled = false;
   }
 
   $('logoutBtn').addEventListener('click', () => {
@@ -1624,7 +1657,7 @@ function initApp() {
             <div class="repick-icon">💬</div>
             <div class="repick-content">
               <div class="repick-title">トレーナーからのメッセージ</div>
-              <div class="repick-message">${r.trainerMessage.replace(/[<>]/g, '')}</div>
+              <div class="repick-message">${escHTML(r.trainerMessage)}</div>
             </div>
           </div>` : ''}
         <div class="quick-date-picker">
@@ -1674,7 +1707,7 @@ function initApp() {
         <div class="repick-icon">🔁</div>
         <div class="repick-content">
           <div class="repick-title">${currentRole === 'client' ? 'トレーナーから日時の再選択を依頼されています' : 'クライアントの再選択を待っています'}</div>
-          ${r.trainerMessage ? `<div class="repick-message">${r.trainerMessage.replace(/[<>]/g, '')}</div>` : ''}
+          ${r.trainerMessage ? `<div class="repick-message">${escHTML(r.trainerMessage)}</div>` : ''}
         </div>
       </div>`;
     }
@@ -1698,7 +1731,7 @@ function initApp() {
         html += `<div class="alt-card">
           <div class="alt-num">案 ${idx + 1}</div>
           <div class="alt-detail-text">${formatDate(a.date)} ${a.timeStart} 〜 ${a.timeEnd}</div>
-          ${a.note ? `<div class="alt-note-text">💬 ${a.note}</div>` : ''}
+          ${a.note ? `<div class="alt-note-text">💬 ${escHTML(a.note)}</div>` : ''}
           ${currentRole === 'client' ? `
             <div class="alt-actions">
               <button class="alt-accept-btn" data-action="accept" data-id="${r.id}" data-alt-index="${idx}">✓ この提案で確定</button>
@@ -2049,7 +2082,7 @@ function initApp() {
           <div class="repick-icon">🔁</div>
           <div class="repick-content">
             <div class="repick-title">${currentRole === 'client' ? 'トレーナーから日時の再選択を依頼されています' : 'クライアントの再選択を待っています'}</div>
-            ${r.trainerMessage ? `<div class="repick-message">${r.trainerMessage.replace(/[<>]/g, '')}</div>` : ''}
+            ${r.trainerMessage ? `<div class="repick-message">${escHTML(r.trainerMessage)}</div>` : ''}
           </div>
         </div>`;
       }
@@ -2067,7 +2100,7 @@ function initApp() {
           html += `<div class="alt-card">
             <div class="alt-num">案 ${idx + 1}</div>
             <div class="alt-detail-text">${formatDate(a.date)} ${a.timeStart} 〜 ${a.timeEnd}</div>
-            ${a.note ? `<div class="alt-note-text">💬 ${a.note}</div>` : ''}
+            ${a.note ? `<div class="alt-note-text">💬 ${escHTML(a.note)}</div>` : ''}
             ${currentRole === 'client' ? `
               <div class="alt-actions">
                 <button class="alt-accept-btn" data-action="accept" data-id="${r.id}" data-alt-index="${idx}">✓ この提案で確定</button>
@@ -2296,7 +2329,7 @@ function initApp() {
         <input type="time" class="alt-ts-input" value="${ts}">
         <span class="alt-time-end">終了 <strong class="alt-te-text">${te}</strong></span>
       </div>
-      <textarea class="alt-note-input" placeholder="メモ（任意） — 例：この時間は空きがあります">${prefill.note || ''}</textarea>`;
+      <textarea class="alt-note-input" placeholder="メモ（任意） — 例：この時間は空きがあります">${escHTML(prefill.note || '')}</textarea>`;
 
     // Live update date text
     const dateInput = row.querySelector('.alt-date-input');
